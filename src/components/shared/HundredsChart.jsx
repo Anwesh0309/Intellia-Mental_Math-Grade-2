@@ -46,11 +46,11 @@ export default function HundredsChart({
               // Direct cell styling based on status
               let style = {};
               if (isCurrent) {
-                style = { backgroundColor: '#4CAF50', color: '#FFFFFF', fontWeight: 'bold' };
+                style = { backgroundColor: '#4DD0E1', color: '#1A1A1A', fontWeight: 'bold' };
               } else if (isStart) {
-                style = { backgroundColor: '#4A90D9', color: '#FFFFFF', fontWeight: 'bold' };
+                style = { backgroundColor: '#7C4DFF', color: '#FFFFFF', fontWeight: 'bold' };
               } else if (isHigh) {
-                style = { backgroundColor: 'rgba(255, 112, 67, 0.25)', border: '1.5px solid #FF7043', color: '#E64A19', fontWeight: 'bold' };
+                style = { backgroundColor: 'rgba(255, 199, 44, 0.25)', border: '1.5px solid #FFC72C', color: '#FFB700', fontWeight: 'bold' };
               }
 
               return (

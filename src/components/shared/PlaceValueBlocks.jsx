@@ -50,8 +50,8 @@ export default function PlaceValueBlocks({
           y={0} 
           width={rodWidth} 
           height={rodHeight} 
-          fill="#4A90D9" 
-          stroke="#2E6DB4" 
+          fill="#7C4DFF" 
+          stroke="#693BE3" 
           strokeWidth="1.5" 
           rx="3" 
         />
@@ -64,7 +64,7 @@ export default function PlaceValueBlocks({
               y1={i * segmentHeight} 
               x2={x + rodWidth} 
               y2={i * segmentHeight} 
-              stroke="#2E6DB4" 
+              stroke="#693BE3" 
               strokeWidth="1" 
             />
           )
@@ -116,8 +116,8 @@ export default function PlaceValueBlocks({
           y={y} 
           width={cubeSize} 
           height={cubeSize} 
-          fill="#FFB300" 
-          stroke="#F57C00" 
+          fill="#FFC72C" 
+          stroke="#FFB700" 
           strokeWidth="1.5" 
           rx="2.5" 
         />

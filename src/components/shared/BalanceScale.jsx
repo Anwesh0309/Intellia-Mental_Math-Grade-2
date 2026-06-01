@@ -66,7 +66,7 @@ export default function BalanceScale({
         
         {/* Support Pillar Pivot point */}
         <circle cx={cx} cy={cy} r="10" fill="#37474F" stroke="#263238" strokeWidth="1.5" />
-        <circle cx={cx} cy={cy} r="4" fill="#FFB300" />
+        <circle cx={cx} cy={cy} r="4" fill="#FFC72C" />
 
         {/* Scaled Base Pedestal */}
         <path d={`M ${cx - 40} ${height - 20} L ${cx + 40} ${height - 20} L ${cx + 30} ${height - 5} L ${cx - 30} ${height - 5} Z`} fill="url(#scaleBase)" stroke="#212121" strokeWidth="1.5" />
@@ -94,8 +94,8 @@ export default function BalanceScale({
         {/* Left Pan Plate */}
         <path 
           d={`M ${panLeft.x - 25} ${panLeft.y} Q ${panLeft.x} ${panLeft.y + 10} ${panLeft.x + 25} ${panLeft.y} Z`} 
-          fill="#4A90D9" 
-          stroke="#2E6DB4" 
+          fill="#7C4DFF" 
+          stroke="#5936B3" 
           strokeWidth="2" 
           style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}
         />
@@ -111,29 +111,29 @@ export default function BalanceScale({
         {/* Right Pan Plate */}
         <path 
           d={`M ${panRight.x - 25} ${panRight.y} Q ${panRight.x} ${panRight.y + 10} ${panRight.x + 25} ${panRight.y} Z`} 
-          fill={diff === 0 ? "#4CAF50" : "#FF6B6B"} 
-          stroke={diff === 0 ? "#2E7D32" : "#E53935"} 
+          fill={diff === 0 ? "#4DD0E1" : "#FF6B6B"} 
+          stroke={diff === 0 ? "#00B8D4" : "#E53935"} 
           strokeWidth="2" 
           style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}
         />
 
         {/* Values Labels inside/above the pans */}
         <g transform={`translate(${panLeft.x}, ${panLeft.y - 12})`} style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}>
-          <rect x="-24" y="-12" width="48" height="18" rx="4" fill="#FFFFFF" stroke="#4A90D9" strokeWidth="1" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.1))" />
-          <text x="0" y="1" fill="#2E6DB4" fontSize="10" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+          <rect x="-24" y="-12" width="48" height="18" rx="4" fill="#FFFFFF" stroke="#7C4DFF" strokeWidth="1" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.1))" />
+          <text x="0" y="1" fill="#5936B3" fontSize="10" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
             {leftValue}
           </text>
-          <text x="0" y="32" fill="#81D4FA" fontSize="9" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+          <text x="0" y="32" fill="#B39DDB" fontSize="9" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
             {leftLabel}
           </text>
         </g>
 
         <g transform={`translate(${panRight.x}, ${panRight.y - 12})`} style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}>
-          <rect x="-24" y="-12" width="48" height="18" rx="4" fill="#FFFFFF" stroke={diff === 0 ? "#4CAF50" : "#FF6B6B"} strokeWidth="1" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.1))" />
-          <text x="0" y="1" fill={diff === 0 ? "#2E7D32" : "#D32F2F"} fontSize="10" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+          <rect x="-24" y="-12" width="48" height="18" rx="4" fill="#FFFFFF" stroke={diff === 0 ? "#4DD0E1" : "#FF6B6B"} strokeWidth="1" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.1))" />
+          <text x="0" y="1" fill={diff === 0 ? "#00B8D4" : "#D32F2F"} fontSize="10" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
             {rightValue}
           </text>
-          <text x="0" y="32" fill={diff === 0 ? "#A5D6A7" : "#FFAB91"} fontSize="9" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+          <text x="0" y="32" fill={diff === 0 ? "#80DEEA" : "#FFAB91"} fontSize="9" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
             {rightLabel}
           </text>
         </g>

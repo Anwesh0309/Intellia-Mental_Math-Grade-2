@@ -48,7 +48,7 @@ export default function NumberLine({
 
     // Bezier control point: directly above center
     const pathData = `M ${xStart} ${yLine} Q ${xMid} ${yPeak} ${xEnd} ${yLine}`;
-    const strokeColor = jump.color || "#4CAF50";
+    const strokeColor = jump.color || "#4DD0E1";
 
     return (
       <g key={`jump-${idx}`} className="number-line-jump">
@@ -165,7 +165,7 @@ export default function NumberLine({
                 y1={yLine - (isMarked || isActive ? 8 : 4)} 
                 x2={tick.x} 
                 y2={yLine + (isMarked || isActive ? 8 : 4)} 
-                stroke={isActive ? "#FFB300" : isMarked ? "#4CAF50" : "#B0BEC5"} 
+                stroke={isActive ? "#FFC72C" : isMarked ? "#4DD0E1" : "#B0BEC5"} 
                 strokeWidth={isMarked || isActive ? "2.5" : "1.5"} 
               />
               
@@ -174,7 +174,7 @@ export default function NumberLine({
                 <text 
                   x={tick.x} 
                   y={yLine + 32} 
-                  fill={isActive ? "#FFB300" : isMarked ? "#4CAF50" : "#B0BEC5"} 
+                  fill={isActive ? "#FFC72C" : isMarked ? "#4DD0E1" : "#B0BEC5"} 
                   fontSize={isMarked || isActive ? "16" : "13"} 
                   fontFamily="Fredoka"
                   fontWeight={isMarked || isActive ? "bold" : "medium"}
@@ -187,15 +187,15 @@ export default function NumberLine({
               {/* Special Flags for marked checkpoints */}
               {isMarked && (
                 <g transform={`translate(${tick.x}, ${yLine - 10})`}>
-                  <circle cx="0" cy="0" r="4.5" fill="#4CAF50" stroke="#FFFFFF" strokeWidth="1.5" />
+                  <circle cx="0" cy="0" r="4.5" fill="#4DD0E1" stroke="#FFFFFF" strokeWidth="1.5" />
                 </g>
               )}
 
               {/* Glowing ring for active focus point */}
               {isActive && (
                 <g transform={`translate(${tick.x}, ${yLine})`}>
-                  <circle cx="0" cy="0" r="9" fill="none" stroke="#FFB300" strokeWidth="2.5" opacity="0.8" className="pulse-glow-ring" />
-                  <circle cx="0" cy="0" r="4" fill="#FFB300" />
+                  <circle cx="0" cy="0" r="9" fill="none" stroke="#FFC72C" strokeWidth="2.5" opacity="0.8" className="pulse-glow-ring" />
+                  <circle cx="0" cy="0" r="4" fill="#FFC72C" />
                 </g>
               )}
             </g>
