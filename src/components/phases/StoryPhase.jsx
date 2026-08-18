@@ -4,7 +4,7 @@ import PlaceValueBlocks from '../shared/PlaceValueBlocks';
 import NumberLine from '../shared/NumberLine';
 import HundredsChart from '../shared/HundredsChart';
 import BalanceScale from '../shared/BalanceScale';
-import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { storyPanels } from '../../data/storyContent';
 import { narrate, stopNarration } from '../../utils/audio';
 import * as narrations from '../../utils/narration';
@@ -14,6 +14,7 @@ export default function StoryPhase({
   audioEnabled = true, 
   onNextPanel, 
   onPrevPanel, 
+  onSelectPanel,
   onComplete 
 }) {
   const activePanel = storyPanels[storyPanel] || storyPanels[0];
@@ -56,12 +57,12 @@ export default function StoryPhase({
     return () => stopNarration();
   }, [audioEnabled, storyPanel]);
 
-  // Renders the visual on top of the card
+  // Renders the visual on the left side of the card matching screenshot
   const renderPanelVisual = () => {
     switch (activePanel.strategy) {
       case 'decompose':
         return (
-          <div className="story-single-visual-container animate-bounce-in">
+          <div className="story-visual-left-box animate-bounce-in">
             <h4 className="visual-example-title font-fredoka text-cyan-300">Example: 34 + 25</h4>
             <div className="story-block-comparison justify-center mt-2">
               <div>
@@ -74,11 +75,14 @@ export default function StoryPhase({
                 <PlaceValueBlocks tens={2} ones={5} size="sm" type="to-add-tens" />
               </div>
             </div>
+            <div className="story-visual-bottom-banner font-fredoka">
+              ⭐ Strategy 1: Decompose ⭐
+            </div>
           </div>
         );
       case 'bridgeTen':
         return (
-          <div className="story-single-visual-container animate-bounce-in">
+          <div className="story-visual-left-box animate-bounce-in">
             <h4 className="visual-example-title font-fredoka text-cyan-300">Example: 37 + 6</h4>
             <NumberLine 
               min={35} 
@@ -90,11 +94,14 @@ export default function StoryPhase({
               ]}
               activeValue={43}
             />
+            <div className="story-visual-bottom-banner font-fredoka">
+              ⭐ Strategy 2: Bridge to 10 ⭐
+            </div>
           </div>
         );
       case 'hundredsChart':
         return (
-          <div className="story-single-visual-container animate-bounce-in flex flex-col items-center justify-center">
+          <div className="story-visual-left-box animate-bounce-in flex flex-col items-center justify-center">
             <h4 className="visual-example-title font-fredoka text-cyan-300">Example: 45 + 23</h4>
             <div className="story-hundreds-wrapper-scale mt-1">
               <HundredsChart 
@@ -103,11 +110,14 @@ export default function StoryPhase({
                 current={68}
               />
             </div>
+            <div className="story-visual-bottom-banner font-fredoka">
+              ⭐ Strategy 3: Hundreds Grid Jump ⭐
+            </div>
           </div>
         );
       case 'compensate':
         return (
-          <div className="story-single-visual-container animate-bounce-in">
+          <div className="story-visual-left-box animate-bounce-in">
             <h4 className="visual-example-title font-fredoka text-cyan-300">Example: 46 + 39</h4>
             <BalanceScale 
               leftValue={85} 
@@ -115,73 +125,94 @@ export default function StoryPhase({
               leftLabel="46 + 39" 
               rightLabel="46 + 40" 
             />
+            <div className="story-visual-bottom-banner font-fredoka">
+              ⭐ Strategy 4: Compensation ⭐
+            </div>
           </div>
         );
       default:
         // Welcome and closing panel illustrations
         if (activePanel.image) {
           return (
-            <div className="story-single-visual-image-box animate-fade-in">
+            <div className="story-visual-image-wrapper animate-fade-in">
               <img 
                 src={activePanel.image} 
                 alt={activePanel.title} 
                 className="story-panel-full-img" 
               />
+              <div className="story-visual-bottom-banner font-fredoka">
+                ⭐ {activePanel.title} ⭐
+              </div>
             </div>
           );
         }
         return (
-          <div className="story-single-visual-container animate-fade-in flex flex-col items-center justify-center py-8">
-            <BookOpen size={48} className="logo-icon-gold mb-2" />
+          <div className="story-visual-left-box animate-fade-in flex flex-col items-center justify-center py-8">
+            <BookOpen size={54} className="logo-icon-gold mb-3" />
             <span className="visual-badge-label font-fredoka text-yellow-400">MATH SHORTCUTS</span>
+            <div className="story-visual-bottom-banner font-fredoka">
+              ⭐ Story Mode ⭐
+            </div>
           </div>
         );
     }
   };
 
   return (
-    <div className="phase-card-wrapper story-phase-container">
-      {/* Banner */}
-      <div className="phase-banner-header story-banner">
-        <h2 className="phase-banner-title font-fredoka">PHASE 2: THE STORY 📖</h2>
-        <span className="phase-banner-subtitle">Academy Storyboards: Secret Math Shortcuts</span>
+    <div className="ss-story-page-container animate-fade-in">
+      {/* Top thin progress bar matching screenshot */}
+      <div className="ss-story-top-progress-bar-row">
+        <div className="ss-story-progress-track">
+          <div 
+            className="ss-story-progress-fill" 
+            style={{ width: `${((storyPanel + 1) / storyPanels.length) * 100}%` }}
+          />
+        </div>
+        <span className="ss-story-step-count font-fredoka">
+          {storyPanel + 1} / {storyPanels.length}
+        </span>
       </div>
 
-      {/* Main Single Card Story Layout */}
-      <div className="story-single-card mascot-bubble-glow">
-        {/* Top visual section (image or graph) */}
-        <div className="story-card-top-visual">
+      {/* Main 2-Column Split Card matching screenshot */}
+      <div className="ss-story-split-card animate-fade-in">
+        {/* Left Visual Column */}
+        <div className="ss-story-visual-column">
           {renderPanelVisual()}
         </div>
 
-        {/* Text narrative and title */}
-        <div className="story-card-body-text">
-          <h3 className="story-panel-title font-fredoka text-amber-400 mb-2">{activePanel.title}</h3>
-          <p className="story-para-text font-nunito">{activePanel.text}</p>
+        {/* Right Content Column */}
+        <div className="ss-story-content-column">
+          <h3 className="ss-story-title font-fredoka">{activePanel.title}</h3>
+          <p className="ss-story-text font-nunito">{activePanel.text}</p>
           
-          {/* Sparkly equation helper banner */}
-          {activePanel.example && (
-            <div className="story-sparkle-badge font-fredoka">
+          {/* Highlight Callout Box matching screenshot */}
+          {activePanel.example ? (
+            <div className="ss-story-callout-box font-fredoka">
               ✨ "{activePanel.example.step1} ➔ {activePanel.example.step2}" ✨
+            </div>
+          ) : (
+            <div className="ss-story-callout-box font-fredoka">
+              ✨ "Master mental math shortcuts step by step!" ✨
             </div>
           )}
 
-          {/* Coach Cooper / Leo / Lily Speech Avatar bubble */}
-          <div className="story-avatar-speech-bubble mt-4">
-            <div className="avatar-circle-box">
+          {/* Mascot Yellow Circle Avatar + White Speech Bubble matching screenshot */}
+          <div className="ss-story-mascot-row font-nunito">
+            <div className="ss-story-mascot-circle">
               <Mascot mood={activePanel.mascotMood || "idle"} />
             </div>
-            <div className="speech-text-bubble font-nunito">
-              {activePanel.strategy ? "Try decomposing the steps mentally first!" : "Let's learn together!"}
+            <div className="ss-story-speech-bubble font-nunito">
+              <span>{activePanel.strategy ? "Try decomposing the steps mentally first!" : "Let's learn together! 🍎"}</span>
+              <div className="ss-bubble-tail-left" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Navigator controls beneath the card */}
-      <div className="story-card-navigation-bar">
+      {/* Bottom Navigation Controls Bar matching screenshot */}
+      <div className="ss-story-bottom-nav">
         <button 
-          className="story-round-nav-btn btn-grey font-fredoka"
+          className="ss-story-nav-btn ss-btn-back font-fredoka"
           onClick={onPrevPanel}
           disabled={storyPanel === 0}
           aria-label="Back to previous panel"
@@ -189,19 +220,23 @@ export default function StoryPhase({
           ← Back
         </button>
 
-        {/* 7 Progress bullet dots */}
-        <div className="story-progress-dots">
+        {/* Clickable Progress Dots */}
+        <div className="ss-story-dots-row">
           {storyPanels.map((_, idx) => (
-            <div 
+            <button 
               key={idx} 
-              className={`story-dot ${idx === storyPanel ? 'dot-active' : ''}`} 
+              type="button"
+              onClick={() => onSelectPanel && onSelectPanel(idx)}
+              className={`ss-story-dot ${idx === storyPanel ? 'dot-active' : ''}`}
+              title={`Jump to panel ${idx + 1}`}
+              aria-label={`Jump to story panel ${idx + 1}`}
             />
           ))}
         </div>
 
-        {storyPanel < 6 ? (
+        {storyPanel < storyPanels.length - 1 ? (
           <button 
-            className="story-round-nav-btn btn-yellow font-fredoka"
+            className="ss-story-nav-btn ss-btn-next font-fredoka"
             onClick={onNextPanel}
             aria-label="Advance to next panel"
           >
@@ -209,7 +244,7 @@ export default function StoryPhase({
           </button>
         ) : (
           <button 
-            className="story-round-nav-btn btn-green font-fredoka"
+            className="ss-story-nav-btn ss-btn-next font-fredoka"
             onClick={onComplete}
             aria-label="Proceed to Phase 3, the Simulation sandbox"
           >

@@ -1,36 +1,21 @@
 import React from 'react';
 
 export default function HundredsChart({ 
-  highlighted = new Set(), // Set of number values in path
-  current = null,          // Active cell value (green pulse)
-  startCell = null,        // Original cell value (blue focus)
+  highlighted = new Set(), // Set or Array of number values in path
+  current = null,          // Active cell value
+  startCell = null,        // Original cell value
   onCellClick = null       // Interactive cell click callback
 }) {
-  // Generate numbers 1 to 100 arranged in a grid
-  // Row 0: 1 to 10
-  // Row 1: 11 to 20
-  // ...
-  // Row 9: 91 to 100
+  // Generate numbers 1 to 100 arranged in a 10x10 grid
   const rows = Array.from({ length: 10 }, (_, r) => 
     Array.from({ length: 10 }, (_, c) => r * 10 + c + 1)
   );
 
-  const getCellClassName = (val) => {
-    let classes = ["hundreds-cell"];
-    
-    if (val === current) {
-      classes.push("cell-active-glow");
-    } else if (val === startCell) {
-      classes.push("cell-start-focus");
-    } else if (highlighted.has(val)) {
-      classes.push("cell-path-highlighted");
-    }
-    
-    if (onCellClick) {
-      classes.push("cell-clickable");
-    }
-    
-    return classes.join(" ");
+  const isHighlighted = (val) => {
+    if (!highlighted) return false;
+    if (typeof highlighted.has === 'function') return highlighted.has(val);
+    if (Array.isArray(highlighted)) return highlighted.includes(val);
+    return false;
   };
 
   return (
@@ -41,25 +26,46 @@ export default function HundredsChart({
             {row.map((val) => {
               const isStart = val === startCell;
               const isCurrent = val === current;
-              const isHigh = highlighted.has(val);
+              const isHigh = isHighlighted(val);
               
-              // Direct cell styling based on status
+              // High-contrast cell styling for Grade 2 visual clarity
               let style = {};
               if (isCurrent) {
-                style = { backgroundColor: '#4DD0E1', color: '#1A1A1A', fontWeight: 'bold' };
+                style = { 
+                  backgroundColor: '#FFC72C', 
+                  color: '#1A1A1A', 
+                  fontWeight: 900, 
+                  fontSize: '1.15rem',
+                  border: '2.5px solid #FFFFFF',
+                  boxShadow: '0 0 16px rgba(255, 199, 44, 0.95)',
+                  transform: 'scale(1.18)',
+                  zIndex: 10
+                };
+              } else if (isHigh && !isStart) {
+                style = { 
+                  backgroundColor: '#4DD0E1', 
+                  color: '#1A1A1A', 
+                  fontWeight: 900,
+                  border: '2px solid #00E5FF',
+                  boxShadow: '0 0 8px rgba(77, 208, 225, 0.6)'
+                };
               } else if (isStart) {
-                style = { backgroundColor: '#7C4DFF', color: '#FFFFFF', fontWeight: 'bold' };
-              } else if (isHigh) {
-                style = { backgroundColor: 'rgba(255, 199, 44, 0.25)', border: '1.5px solid #FFC72C', color: '#FFB700', fontWeight: 'bold' };
+                style = { 
+                  backgroundColor: '#7C4DFF', 
+                  color: '#FFFFFF', 
+                  fontWeight: 900,
+                  border: '2px solid #A78BFA',
+                  boxShadow: '0 0 10px rgba(124, 77, 255, 0.6)'
+                };
               }
 
               return (
                 <button
                   key={`cell-${val}`}
-                  className={getCellClassName(val)}
+                  type="button"
+                  className={`hundreds-cell ${isCurrent ? 'cell-active-glow' : ''} ${isStart ? 'cell-start-focus' : ''} ${isHigh ? 'cell-path-highlighted' : ''}`}
                   style={style}
                   onClick={() => onCellClick && onCellClick(val)}
-                  disabled={!onCellClick}
                   aria-label={`Number ${val}${isStart ? ', Starting position' : ''}${isCurrent ? ', Current position' : ''}`}
                 >
                   {val}

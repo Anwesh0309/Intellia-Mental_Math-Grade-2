@@ -1,275 +1,451 @@
-import React, { useState, useEffect } from 'react';
-import Mascot from '../shared/Mascot';
-import { Award, Send, Trophy, Star, Shield, ArrowRight } from 'lucide-react';
-import { playSound, narrate, stopNarration } from '../../utils/audio';
-import { reflectNarration } from '../../utils/narration';
-
-const PRESETS = [
-  "Add Tens, Then Ones is my favorite because breaking numbers is easy!",
-  "Make the Next Ten helps me bridge to the next ten without getting confused.",
-  "Hundreds Chart Jumps are super fun! I can visualize jumping up and down rows.",
-  "Round and Adjust is the fastest when adding numbers that end in 9!"
-];
-
-const BELTS = [
-  { name: "White Belt", color: "#FFFFFF" },
-  { name: "Yellow Belt", color: "#FFEB3B" },
-  { name: "Orange Belt", color: "#FF9800" },
-  { name: "Green Belt", color: "#4CAF50" },
-  { name: "Blue Belt", color: "#2196F3" },
-  { name: "Purple Belt", color: "#9C27B0" },
-  { name: "Red Belt", color: "#F44336" },
-  { name: "Brown Belt", color: "#795548" },
-  { name: "Deputy Black Belt", color: "#424242" },
-  { name: "Black Belt", color: "#000000" }
-];
+import React, { useEffect } from 'react';
+import { playSound, narrate } from '../../utils/audio';
 
 export default function ReflectPhase({ 
   xp = 0, 
   totalStars = 0, 
   badges = [], 
-  worldScores = [],
+  worldScores = [null, null, null, null, null, null, null, null, null, null],
+  maxStreak = 0,
   audioEnabled = true, 
-  onFinishLesson 
+  onFinishLesson,
+  onPlayAgain
 }) {
-  const [reflectStep, setReflectStep] = useState('scoreboard'); // 'scoreboard' | 'journal' | 'certificate'
-  const [journalText, setJournalText] = useState("");
+  // Calculate dynamic performance results from student practice phase data
+  const attemptedScores = Array.isArray(worldScores) ? worldScores.filter(s => s !== null && s !== undefined) : [];
+  const totalCorrect = Array.isArray(worldScores) ? worldScores.reduce((sum, score) => sum + (score !== null && score !== undefined ? score : 0), 0) : 0;
+  
+  // Benchmark base: attempted questions (10 per world) or default to 10
+  const totalQuestions = attemptedScores.length > 0 ? (attemptedScores.length * 10) : 10;
+  const percent = totalQuestions > 0 ? Math.min(100, Math.round((totalCorrect / totalQuestions) * 100)) : 0;
+  const displayFraction = `${totalCorrect}/${totalQuestions}`;
+
+  // Star rating (0 to 3) based on percent
+  const filledStarsCount = percent >= 80 ? 3 : percent >= 50 ? 2 : percent >= 20 ? 1 : 0;
+
+  // Individual strategy scores for Worlds 0, 1, and 2
+  const decompScore = (worldScores && worldScores[0] !== null && worldScores[0] !== undefined) ? worldScores[0] : 0;
+  const bridgeScore = (worldScores && worldScores[1] !== null && worldScores[1] !== undefined) ? worldScores[1] : 0;
+  const compScore = (worldScores && worldScores[2] !== null && worldScores[2] !== undefined) ? worldScores[2] : 0;
+
+  // Helper for 3 star representation per strategy strip
+  const getCategoryStars = (scoreVal) => {
+    const ratio = scoreVal / 10;
+    if (ratio >= 0.8) return { text: '★★★', filled: 3 };
+    if (ratio >= 0.5) return { text: '★★☆', filled: 2 };
+    if (ratio >= 0.2) return { text: '★☆☆', filled: 1 };
+    return { text: '☆☆☆', filled: 0 };
+  };
+
+  // Dynamic mascot voice & text feedback
+  const getMascotMessage = () => {
+    if (percent >= 80) return "Outstanding! You're a true Addition Ninja Master! 🏆";
+    if (percent >= 50) return "Great work! You've mastered several mental math strategies! 🚀";
+    if (totalCorrect > 0) return "Good start! Try again to earn 3 stars! 📚";
+    return "Welcome! Practice mental math strategies to earn stars and level up! 🌟";
+  };
+
+  const mascotText = getMascotMessage();
 
   // Play narration upon mounting Reflect phase
   useEffect(() => {
-    if (audioEnabled && reflectStep === 'journal') {
-      narrate(reflectNarration(), true);
+    if (audioEnabled) {
+      narrate([`Awesome job completing your math journey! ${mascotText}`], true);
     }
-  }, [audioEnabled, reflectStep]);
+  }, [audioEnabled, mascotText]);
 
-  const handleGoToJournal = () => {
-    setReflectStep('journal');
+  const handlePlayAgainClick = () => {
+    playSound('chime');
+    if (onPlayAgain) onPlayAgain();
+    else if (onFinishLesson) onFinishLesson();
   };
 
-  const handleSealCertificate = (e) => {
-    e.preventDefault();
-    if (!journalText) return;
-    setReflectStep('certificate');
-    playSound('fanfare');
+  const handleHomeClick = () => {
+    playSound('chime');
+    if (onFinishLesson) onFinishLesson();
   };
+
+  // SVG Circle Gauge calculations (r = 54, circumference ~ 339.29)
+  const radius = 54;
+  const strokeWidth = 10;
+  const normalizedRadius = radius - strokeWidth / 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="phase-card-wrapper reflect-phase-container">
-      {/* Banner */}
-      <div className="phase-banner-header reflect-banner">
-        <h2 className="phase-banner-title font-fredoka">PHASE 5: REFLECT 📝</h2>
-        <span className="phase-banner-subtitle">
-          {reflectStep === 'scoreboard' ? "Dojo Performance Scoreboard" : 
-           reflectStep === 'journal' ? "Write Your Reflection Journal" : 
-           "Seal Your Ninja Certificate"}
-        </span>
+    <div className="reflect-screen-wrapper animate-fade-in" style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: '100vh',
+      position: 'relative',
+      overflow: 'hidden',
+      padding: '1rem',
+      boxSizing: 'border-box'
+    }}>
+      {/* Background Confetti Particles */}
+      <div className="confetti-particles-layer" aria-hidden="true" style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none',
+        zIndex: 1
+      }}>
+        <div className="confetti-piece p1" style={{ position: 'absolute', top: '12%', left: '15%', background: '#4DD0E1', width: 10, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p2" style={{ position: 'absolute', top: '18%', left: '28%', background: '#FF5252', width: 12, height: 8, borderRadius: 2 }} />
+        <div className="confetti-piece p3" style={{ position: 'absolute', top: '25%', left: '34%', background: '#FFC72C', width: 14, height: 8, borderRadius: 2 }} />
+        <div className="confetti-piece p4" style={{ position: 'absolute', top: '10%', left: '46%', background: '#22C55E', width: 10, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p5" style={{ position: 'absolute', top: '15%', left: '54%', background: '#7C4DFF', width: 12, height: 12, borderRadius: 2 }} />
+        <div className="confetti-piece p6" style={{ position: 'absolute', top: '22%', left: '60%', background: '#FFC72C', width: 10, height: 14, borderRadius: 2 }} />
+        <div className="confetti-piece p7" style={{ position: 'absolute', top: '30%', left: '73%', background: '#E91E63', width: 10, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p8" style={{ position: 'absolute', top: '14%', left: '84%', background: '#4DD0E1', width: 12, height: 8, borderRadius: 2 }} />
+        <div className="confetti-piece p9" style={{ position: 'absolute', top: '28%', left: '92%', background: '#22C55E', width: 10, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p10" style={{ position: 'absolute', top: '44%', left: '8%', background: '#FF5252', width: 10, height: 12, borderRadius: 2 }} />
+        <div className="confetti-piece p11" style={{ position: 'absolute', top: '48%', left: '27%', background: '#FFC72C', width: 12, height: 12, borderRadius: 2 }} />
+        <div className="confetti-piece p12" style={{ position: 'absolute', top: '42%', left: '39%', background: '#7C4DFF', width: 10, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p13" style={{ position: 'absolute', top: '46%', left: '61%', background: '#E91E63', width: 10, height: 14, borderRadius: 2 }} />
+        <div className="confetti-piece p14" style={{ position: 'absolute', top: '52%', left: '85%', background: '#FFC72C', width: 12, height: 8, borderRadius: 2 }} />
+        <div className="confetti-piece p15" style={{ position: 'absolute', top: '76%', left: '22%', background: '#FF5252', width: 12, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p16" style={{ position: 'absolute', top: '82%', left: '66%', background: '#4DD0E1', width: 10, height: 10, borderRadius: 2 }} />
+        <div className="confetti-piece p17" style={{ position: 'absolute', top: '78%', left: '90%', background: '#22C55E', width: 12, height: 12, borderRadius: 2 }} />
       </div>
 
-      {/* STEP 1: OVERALL SCOREBOARD */}
-      {reflectStep === 'scoreboard' && (
-        <div className="reflect-scoreboard-view animate-fade-in p-6">
-          <h3 className="scoreboard-title font-fredoka text-center mb-6">DOJO QUEST SCOREBOARD</h3>
-          
-          <div className="scoreboard-grid mb-6">
-            <div className="score-item-box">
-              <span className="text-3xl">⭐</span>
-              <span className="score-item-val">{xp}</span>
-              <span className="score-item-lbl font-fredoka">Total XP</span>
-            </div>
-            <div className="score-item-box">
-              <span className="text-3xl">🏆</span>
-              <span className="score-item-val">{totalStars}</span>
-              <span className="score-item-lbl font-fredoka">Stars Collected</span>
-            </div>
-            <div className="score-item-box">
-              <span className="text-3xl">🏅</span>
-              <span className="score-item-val">{badges.length}</span>
-              <span className="score-item-lbl font-fredoka">Badges Unlocked</span>
-            </div>
-            <div className="score-item-box">
-              <span className="text-3xl">🥷</span>
-              <span className="score-item-val">
-                {worldScores.filter(s => s !== null).length} / 10
-              </span>
-              <span className="score-item-lbl font-fredoka">Belts Completed</span>
-            </div>
-          </div>
-
-          <div className="belts-performance-card bg-black/20 p-5 rounded-2xl border border-white/10 mb-6">
-            <h4 className="font-fredoka text-accent text-center mb-4">Belt Exam Performance Records</h4>
-            <div className="belts-grid-container">
-              {BELTS.map((belt, idx) => {
-                const score = worldScores[idx];
-                const attempted = score !== null;
-                return (
-                  <div key={belt.name} className="belt-performance-item">
-                    <div className="belt-info-left">
-                      <div 
-                        className="belt-color-dot" 
-                        style={{ backgroundColor: belt.color }} 
-                      />
-                      <span className="font-fredoka text-sm text-slate-200">{belt.name}</span>
-                    </div>
-                    <span className={`font-fredoka text-sm ${attempted ? (score >= 3 ? 'text-success' : 'text-danger') : 'text-slate-500'}`}>
-                      {attempted ? `${score} / 5 (${score >= 3 ? 'Passed ✅' : 'Failed ❌'})` : 'Not Attempted'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="text-center">
-            <button
-              onClick={handleGoToJournal}
-              className="finish-lesson-btn font-fredoka mt-2"
-              aria-label="Proceed to reflection journal"
-            >
-              WRITE MY REFLECTION <ArrowRight size={18} />
-            </button>
-          </div>
+      {/* Main Glass Card matching reference design */}
+      <div className="reflect-card-box font-fredoka" style={{
+        position: 'relative',
+        zIndex: 10,
+        width: 'clamp(320px, 88vw, 450px)',
+        maxHeight: 'calc(100vh - 100px)',
+        background: 'rgba(22, 16, 56, 0.95)',
+        border: '1.5px solid rgba(255, 199, 44, 0.4)',
+        borderRadius: '26px',
+        padding: 'clamp(1rem, 2vh, 1.4rem) clamp(1.2rem, 3vw, 1.6rem)',
+        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.65), 0 0 30px rgba(124, 77, 255, 0.25)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 'clamp(0.4rem, 1.2vh, 0.65rem)',
+        backdropFilter: 'blur(16px)',
+        boxSizing: 'border-box'
+      }}>
+        {/* Top Trophy Icon */}
+        <div style={{ fontSize: 'clamp(2.0rem, 4vh, 2.5rem)', lineHeight: 1 }}>
+          🏆
         </div>
-      )}
 
-      {/* STEP 2: JOURNAL ENTRY */}
-      {reflectStep === 'journal' && (
-        <div className="reflect-journal-editor animate-fade-in p-6">
-          <div className="journal-instructions-row mb-6">
-            <div className="avatar-med">
-              <Mascot mood="teaching" />
-            </div>
-            <div className="mascot-bubble-glow font-nunito p-4 rounded-2xl bg-white/5 border border-white/10">
-              <p>
-                <strong>Lily and Leo say:</strong> "Which strategy did you like the most today?
-                What mental math shortcut makes you feel like a real math ninja? Let's write down your thoughts!"
-              </p>
-            </div>
-          </div>
+        {/* Header Text */}
+        <div style={{ textAlign: 'center', marginTop: '-0.2rem' }}>
+          <h2 style={{
+            margin: 0,
+            fontSize: 'clamp(1.4rem, 3vh, 1.85rem)',
+            color: '#FFFFFF',
+            fontWeight: 900,
+            fontFamily: 'Fredoka, sans-serif',
+            letterSpacing: '0.2px'
+          }}>
+            Journey Complete!
+          </h2>
+          <p style={{
+            margin: '2px 0 0 0',
+            fontSize: 'clamp(0.85rem, 1.8vh, 0.95rem)',
+            color: '#B3A8E0',
+            fontFamily: 'Nunito, sans-serif',
+            fontWeight: 700
+          }}>
+            You finished all 5 phases!
+          </p>
+        </div>
 
-          <form onSubmit={handleSealCertificate} className="journal-main-form">
-            <div className="reflection-presets-strip mb-4">
-              <span className="preset-label font-fredoka block mb-2">Quick Ideas:</span>
-              <div className="flex flex-wrap gap-2">
-                {PRESETS.map((p, idx) => (
-                  <button
-                    key={`preset-${idx}`}
-                    type="button"
-                    onClick={() => setJournalText(p)}
-                    className="preset-pill-btn font-nunito px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-sm text-slate-300 transition-all"
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <label className="journal-label font-fredoka block mb-2 text-slate-200" htmlFor="journal-textarea">
-              Your Math Journal Entry:
-            </label>
-            <textarea
-              id="journal-textarea"
-              className="journal-textarea font-nunito w-full p-4 rounded-xl bg-black/20 border border-white/10 text-white outline-none focus:border-cyan-400"
-              placeholder="I love the Round and Adjust strategy because..."
-              value={journalText}
-              onChange={(e) => setJournalText(e.target.value)}
-              rows="4"
-              required
+        {/* Circular Progress Ring Gauge (Dynamic percentage & fraction) */}
+        <div className="reflect-ring-gauge-container" style={{
+          position: 'relative',
+          width: 'clamp(110px, 20vh, 130px)',
+          height: 'clamp(110px, 20vh, 130px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0.2rem 0'
+        }}>
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 120 120"
+            style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}
+          >
+            {/* Background Track Circle */}
+            <circle
+              cx="60"
+              cy="60"
+              r={normalizedRadius}
+              stroke="rgba(255, 255, 255, 0.12)"
+              strokeWidth={strokeWidth}
+              fill="transparent"
             />
-
-            <div className="journal-submit-row mt-6 text-center">
-              <button
-                type="submit"
-                disabled={!journalText}
-                className="seal-certificate-btn font-fredoka px-6 py-3 bg-gradient-to-r from-success to-emerald-600 rounded-xl text-white font-bold"
-                aria-label="Submit journal entry and seal your math certificate"
-              >
-                <Send size={18} className="inline mr-2" /> SEAL MY CERTIFICATE
-              </button>
-            </div>
-          </form>
+            {/* Gold Progress Arc */}
+            <circle
+              cx="60"
+              cy="60"
+              r={normalizedRadius}
+              stroke="#FFC72C"
+              strokeWidth={strokeWidth}
+              strokeDasharray={`${circumference} ${circumference}`}
+              style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.8s ease-in-out' }}
+              strokeLinecap="round"
+              fill="transparent"
+            />
+          </svg>
+          {/* Inner Dynamic Stats */}
+          <div style={{
+            position: 'absolute',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center'
+          }}>
+            <span style={{
+              fontSize: 'clamp(1.6rem, 3.2vh, 2.1rem)',
+              color: '#FFC72C',
+              fontWeight: 900,
+              fontFamily: 'Fredoka, sans-serif',
+              lineHeight: 1
+            }}>
+              {percent}%
+            </span>
+            <span style={{
+              fontSize: 'clamp(0.85rem, 1.7vh, 0.98rem)',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              fontFamily: 'Fredoka, sans-serif',
+              marginTop: '2px'
+            }}>
+              {displayFraction}
+            </span>
+          </div>
         </div>
-      )}
 
-      {/* STEP 3: NINA CERTIFICATE */}
-      {reflectStep === 'certificate' && (
-        <div className="ninja-certificate-view animate-bounce-in text-center p-6">
-          <div className="certificate-border-box p-6 border-4 border-dashed border-amber-500 rounded-3xl bg-black/20 max-w-2xl mx-auto relative">
-            <div className="certificate-seal-badge animate-bounce mb-4">
-              <Shield size={64} className="color-star mx-auto text-amber-500" />
+        {/* Dynamic 3 Stars Row */}
+        <div style={{ display: 'flex', gap: '0.4rem', fontSize: '1.35rem', margin: '-0.1rem 0 0.1rem 0' }}>
+          <span style={{ color: filledStarsCount >= 1 ? '#FFC72C' : '#52497A' }}>★</span>
+          <span style={{ color: filledStarsCount >= 2 ? '#FFC72C' : '#52497A' }}>★</span>
+          <span style={{ color: filledStarsCount >= 3 ? '#FFC72C' : '#52497A' }}>★</span>
+        </div>
+
+        {/* 3 Stat Metric Cards Row */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr 1fr',
+          gap: '0.5rem',
+          width: '100%',
+        }}>
+          {/* Box 1: XP Earned */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '14px',
+            padding: '0.55rem 0.3rem',
+            textAlign: 'center',
+            border: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            <div style={{ fontSize: 'clamp(1.1rem, 2.4vh, 1.3rem)', color: '#FFFFFF', fontWeight: 900 }}>{xp}</div>
+            <div style={{ fontSize: 'clamp(0.68rem, 1.4vh, 0.76rem)', color: '#B3A8E0', fontWeight: 700, fontFamily: 'Nunito, sans-serif' }}>XP Earned</div>
+          </div>
+
+          {/* Box 2: Max Streak */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '14px',
+            padding: '0.55rem 0.3rem',
+            textAlign: 'center',
+            border: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            <div style={{ fontSize: 'clamp(1.1rem, 2.4vh, 1.3rem)', color: '#FF9800', fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+              <span>🔥</span><span>{maxStreak}</span>
             </div>
-            
-            <h3 className="cert-title font-fredoka text-3xl text-amber-400 mb-1">GRADUATION CERTIFICATE</h3>
-            <span className="cert-subtitle font-nunito tracking-widest text-slate-400 text-sm">MENTAL MATH NINJA ACADEMY</span>
-            
-            <div className="cert-divider my-4 border-t-2 border-amber-500/30" />
-            
-            <p className="cert-narrative font-nunito text-slate-200 leading-relaxed max-w-lg mx-auto">
-              This certifies that our brave student has successfully completed all 5 phases of
-              <strong> Singapore Primary Mathematics Lesson 2.3: Addition within 100</strong>.
-              They have mastered all 4 shortcuts (Decompose, Bridge Ten, Hundreds Chart, Compensation).
-            </p>
+            <div style={{ fontSize: 'clamp(0.68rem, 1.4vh, 0.76rem)', color: '#B3A8E0', fontWeight: 700, fontFamily: 'Nunito, sans-serif' }}>Max Streak</div>
+          </div>
 
-            <div className="cert-metrics-box font-fredoka my-6 flex justify-around bg-white/5 p-4 rounded-xl border border-white/5">
-              <div className="cert-metric-node flex flex-col items-center">
-                <span className="metric-icon text-2xl">⭐</span>
-                <span className="metric-val text-amber-400 text-xl font-bold">{xp} XP</span>
-              </div>
-              <div className="cert-metric-node flex flex-col items-center">
-                <span className="metric-icon text-2xl">🏆</span>
-                <span className="metric-val text-amber-400 text-xl font-bold">{totalStars} Stars</span>
-              </div>
-              <div className="cert-metric-node flex flex-col items-center">
-                <span className="metric-icon text-2xl">🏅</span>
-                <span className="metric-val text-amber-400 text-xl font-bold">{badges.length} Badges</span>
-              </div>
+          {/* Box 3: Teaching / Modules Completed */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderRadius: '14px',
+            padding: '0.55rem 0.3rem',
+            textAlign: 'center',
+            border: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            <div style={{ fontSize: 'clamp(1.1rem, 2.4vh, 1.3rem)', color: '#FFFFFF', fontWeight: 900 }}>{attemptedScores.length}/3</div>
+            <div style={{ fontSize: 'clamp(0.68rem, 1.4vh, 0.76rem)', color: '#B3A8E0', fontWeight: 700, fontFamily: 'Nunito, sans-serif' }}>Teaching</div>
+          </div>
+        </div>
+
+        {/* 3 Dynamic Strategy Category Progress Strips */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', width: '100%' }}>
+          {/* Strip 1: Decompose Strategy */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.06)',
+            borderRadius: '12px',
+            padding: '0.45rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            border: '1px solid rgba(255, 255, 255, 0.06)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.92rem', color: '#FFFFFF', fontWeight: 800 }}>
+              <span>🌈</span>
+              <span>{decompScore}/10</span>
             </div>
-
-            <div className="cert-badges-showcase mb-6">
-              <h4 className="badges-header font-fredoka text-amber-400 mb-2">Unlocked Medals</h4>
-              <div className="badges-flex-strip flex justify-center gap-2 flex-wrap">
-                {badges.length > 0 ? (
-                  badges.map((bId) => {
-                    const label = bId === 'curious_coder' ? '🏅 Curious Coder'
-                                : bId === 'strategy_scholar' ? '🥈 Strategy Scholar'
-                                : bId === 'perfect_ten' ? '💎 Perfect Ten'
-                                : bId === 'streak_champion' ? '🔥 Streak Champion'
-                                : bId === 'full_journey' ? '🌟 Full Journey'
-                                : '🏅 Medal';
-                    return (
-                      <span key={bId} className="cert-badge-chip font-fredoka bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs">
-                        {label}
-                      </span>
-                    );
-                  })
-                ) : (
-                  <span className="cert-badge-chip font-fredoka bg-amber-500/10 border border-amber-500/30 text-amber-400 px-3 py-1 rounded-full text-xs">🏅 Math Dojo Member</span>
-                )}
-              </div>
-            </div>
-
-            <div className="cert-signatures font-nunito flex justify-between max-w-md mx-auto mt-8">
-              <div className="signature-col flex flex-col items-center">
-                <div className="signature-line signature-script font-fredoka border-b border-slate-600 w-32 pb-1 text-slate-200">Coach Cooper</div>
-                <span className="signature-title text-xs text-slate-400 mt-1">Academy Coach</span>
-              </div>
-              <div className="signature-col flex flex-col items-center">
-                <div className="signature-line font-fredoka border-b border-slate-600 w-32 pb-1 text-slate-200">INTELLIA SG</div>
-                <span className="signature-title text-xs text-slate-400 mt-1">MOE Mathematics</span>
-              </div>
+            <div style={{ color: '#FFC72C', fontSize: '0.95rem', letterSpacing: '2px' }}>
+              {getCategoryStars(decompScore).text}
             </div>
           </div>
 
-          <div className="cert-action-row mt-8">
-            <button
-              onClick={onFinishLesson}
-              className="finish-lesson-btn font-fredoka animate-pulse"
-              aria-label="Conclude the lesson and return to the main dashboard"
-            >
-              FINISH QUEST <ArrowRight size={18} />
-            </button>
+          {/* Strip 2: Bridge Ten Strategy */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.06)',
+            borderRadius: '12px',
+            padding: '0.45rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            border: '1px solid rgba(255, 255, 255, 0.06)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.92rem', color: '#FFFFFF', fontWeight: 800 }}>
+              <span>🦄</span>
+              <span>{bridgeScore}/10</span>
+            </div>
+            <div style={{ color: '#FFC72C', fontSize: '0.95rem', letterSpacing: '2px' }}>
+              {getCategoryStars(bridgeScore).text}
+            </div>
+          </div>
+
+          {/* Strip 3: Compensation Strategy */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.06)',
+            borderRadius: '12px',
+            padding: '0.45rem 1rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            border: '1px solid rgba(255, 255, 255, 0.06)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.92rem', color: '#FFFFFF', fontWeight: 800 }}>
+              <span>🚀</span>
+              <span>{compScore}/10</span>
+            </div>
+            <div style={{ color: '#FFC72C', fontSize: '0.95rem', letterSpacing: '2px' }}>
+              {getCategoryStars(compScore).text}
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Mascot Speech Bubble Row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          width: '100%',
+          margin: '0.1rem 0'
+        }}>
+          {/* Mascot Circle Avatar */}
+          <div style={{
+            width: '46px',
+            height: '46px',
+            borderRadius: '50%',
+            background: '#FFC72C',
+            border: '2px solid #FFA000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.6rem',
+            flexShrink: 0,
+            boxShadow: '0 4px 12px rgba(255, 199, 44, 0.35)'
+          }}>
+            🐻
+          </div>
+
+          {/* Speech Bubble */}
+          <div style={{
+            flex: 1,
+            background: '#FFFFFF',
+            borderRadius: '16px',
+            padding: '0.55rem 0.85rem',
+            color: '#1A1A1A',
+            fontSize: 'clamp(0.8rem, 1.6vh, 0.88rem)',
+            fontWeight: 800,
+            fontFamily: 'Fredoka, sans-serif',
+            lineHeight: 1.25,
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25)',
+            position: 'relative'
+          }}>
+            {mascotText}
+          </div>
+        </div>
+
+        {/* Bottom Action Buttons Row */}
+        <div style={{
+          display: 'flex',
+          gap: '0.75rem',
+          width: '100%',
+          marginTop: '0.2rem'
+        }}>
+          {/* Play Again Button */}
+          <button
+            onClick={handlePlayAgainClick}
+            className="reflect-action-btn-play font-fredoka"
+            aria-label="Play Again"
+            style={{
+              flex: 1,
+              background: '#FFC72C',
+              color: '#1A1A1A',
+              border: 'none',
+              borderRadius: '16px',
+              padding: '0.7rem 0.85rem',
+              fontSize: 'clamp(0.95rem, 2vh, 1.08rem)',
+              fontWeight: 900,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 6px 18px rgba(255, 199, 44, 0.4)',
+              transition: 'transform 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <span>🔄</span>
+            <span>Play Again</span>
+          </button>
+
+          {/* Home Button */}
+          <button
+            onClick={handleHomeClick}
+            className="reflect-action-btn-home font-fredoka"
+            aria-label="Go Home"
+            style={{
+              flex: 1,
+              background: '#FFFFFF',
+              color: '#1A1A1A',
+              border: 'none',
+              borderRadius: '16px',
+              padding: '0.7rem 0.85rem',
+              fontSize: 'clamp(0.95rem, 2vh, 1.08rem)',
+              fontWeight: 900,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 6px 18px rgba(255, 255, 255, 0.25)',
+              transition: 'transform 0.15s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.03)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <span>🏠</span>
+            <span>Home</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -91,6 +91,13 @@ function gameReducer(state, action) {
       };
       break;
 
+    case 'SET_STORY_PANEL':
+      nextState = {
+        ...state,
+        storyPanel: Math.max(0, Math.min(6, action.payload))
+      };
+      break;
+
     case 'COMPLETE_PHASE':
       nextState = {
         ...state,
@@ -112,10 +119,15 @@ function gameReducer(state, action) {
     }
 
     case 'ADD_XP': {
-      const nextXP = state.xp + action.payload;
+      const addedXP = typeof action.payload === 'number' ? action.payload : (action.payload?.earned || 0);
+      const curStreak = action.payload?.streak !== undefined ? action.payload.streak : state.streak + 1;
+      const nextXP = state.xp + addedXP;
+      const nextMaxStreak = Math.max(state.maxStreak || 0, curStreak);
       nextState = {
         ...state,
-        xp: nextXP
+        xp: nextXP,
+        streak: curStreak,
+        maxStreak: nextMaxStreak
       };
       break;
     }
@@ -248,6 +260,17 @@ export default function App() {
 
   return (
     <div className="intellia-app-container">
+      {/* Global floating background numbers matching intro theme across all phases */}
+      <div className="ss-bg-floating-numbers" aria-hidden="true">
+        <span className="bg-num num-1">54</span>
+        <span className="bg-num num-2">91</span>
+        <span className="bg-num num-3">11</span>
+        <span className="bg-num num-4">66</span>
+        <span className="bg-num num-5">90</span>
+        <span className="bg-num num-6">64</span>
+        <span className="bg-num num-7">30</span>
+        <span className="bg-num num-8">69</span>
+      </div>
       {/* Renders global header navigation progress map for all pages EXCEPT welcome screen */}
       {state.phase !== 'intro' && (
         <ProgressMap
@@ -285,6 +308,7 @@ export default function App() {
             audioEnabled={state.audioEnabled}
             onNextPanel={() => dispatch({ type: 'NEXT_STORY_PANEL' })}
             onPrevPanel={() => dispatch({ type: 'PREV_STORY_PANEL' })}
+            onSelectPanel={(idx) => dispatch({ type: 'SET_STORY_PANEL', payload: idx })}
             onComplete={handleStoryComplete}
           />
         )}
@@ -323,8 +347,10 @@ export default function App() {
             totalStars={totalStars}
             badges={state.badges}
             worldScores={state.worldScores}
+            maxStreak={state.maxStreak || state.streak || (state.xp > 0 ? 1 : 0)}
             audioEnabled={state.audioEnabled}
             onFinishLesson={handleReflectComplete}
+            onPlayAgain={() => dispatch({ type: 'CHANGE_PHASE', payload: 'wonder' })}
           />
         )}
       </main>

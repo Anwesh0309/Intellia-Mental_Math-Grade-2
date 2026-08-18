@@ -23,6 +23,7 @@ export const storyPanels = [
     text: "Break the second number into tens and ones. Add the tens to your first number first. Then add the ones. Let's try: 34 plus 25. First, 34 plus 20 equals 54. Then, 54 plus 5 equals 59. You did it!",
     mascotMood: "happy",
     strategy: "decompose",
+    image: "/images/story_strategy1.png",
     example: {
       num1: 34,
       num2: 25,
@@ -37,6 +38,7 @@ export const storyPanels = [
     text: "When adding ones would cross a ten, split the second number to fill up to the next ten first. Let's try: 37 plus 6. How much does 37 need to reach 40? It needs 3 more. So split 6 into 3 and 3. First, 37 plus 3 equals 40. Then, 40 plus 3 equals 43!",
     mascotMood: "teaching",
     strategy: "bridgeTen",
+    image: "/images/story_strategy2.png",
     example: {
       num1: 37,
       num2: 6,
@@ -51,6 +53,7 @@ export const storyPanels = [
     text: "Imagine a hundreds chart in your mind. Jump down one row to add ten. Jump right one square to add one. Let's try: 45 plus 23. Jump down 2 rows: 45, 55, 65. Then jump right 3 squares: 66, 67, 68. The answer is 68!",
     mascotMood: "thinking",
     strategy: "hundredsChart",
+    image: "/images/story_coach.png",
     example: {
       num1: 45,
       num2: 23,
@@ -65,6 +68,7 @@ export const storyPanels = [
     text: "Round one number up to the nearest ten. Add it. Then subtract the extra you added. Let's try: 46 plus 39. Round 39 up to 40. So 46 plus 40 equals 86. But we added 1 too many. So 86 minus 1 equals 85. The answer is 85!",
     mascotMood: "teaching",
     strategy: "compensate",
+    image: "/images/story_challenge.png",
     example: {
       num1: 46,
       num2: 39,

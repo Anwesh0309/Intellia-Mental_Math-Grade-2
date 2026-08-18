@@ -40,11 +40,29 @@ export default function BalanceScale({
   const panRight = { x: rightEnd.x, y: rightEnd.y + panSuspension };
 
   return (
-    <div className="balance-scale-wrapper" aria-label={`Balance scale comparing original equation value ${leftValue} with rounded value ${rightValue}`}>
+    <div 
+      className="balance-scale-wrapper" 
+      aria-label={`Balance scale comparing original equation value ${leftValue} with rounded value ${rightValue}`}
+      style={{
+        width: '100%',
+        maxWidth: '460px',
+        height: '200px',
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative'
+      }}
+    >
       <svg 
         viewBox={`0 0 ${width} ${height}`} 
-        width="100%" 
-        height="100%" 
+        style={{
+          width: '100%',
+          height: '100%',
+          maxHeight: '200px',
+          display: 'block',
+          overflow: 'visible'
+        }}
         xmlns="http://www.w3.org/2000/svg"
         className="balance-scale-svg"
       >
@@ -118,22 +136,22 @@ export default function BalanceScale({
         />
 
         {/* Values Labels inside/above the pans */}
-        <g transform={`translate(${panLeft.x}, ${panLeft.y - 12})`} style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}>
-          <rect x="-24" y="-12" width="48" height="18" rx="4" fill="#FFFFFF" stroke="#7C4DFF" strokeWidth="1" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.1))" />
-          <text x="0" y="1" fill="#5936B3" fontSize="10" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+        <g transform={`translate(${panLeft.x}, ${panLeft.y - 14})`} style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}>
+          <rect x="-32" y="-14" width="64" height="24" rx="8" fill="#FFFFFF" stroke="#7C4DFF" strokeWidth="2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.2))" />
+          <text x="0" y="3" fill="#5936B3" fontSize="14" fontFamily="Fredoka" fontWeight="900" textAnchor="middle">
             {leftValue}
           </text>
-          <text x="0" y="32" fill="#B39DDB" fontSize="9" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+          <text x="0" y="34" fill="#E2D8FF" fontSize="12" fontFamily="Fredoka" fontWeight="800" textAnchor="middle">
             {leftLabel}
           </text>
         </g>
 
-        <g transform={`translate(${panRight.x}, ${panRight.y - 12})`} style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}>
-          <rect x="-24" y="-12" width="48" height="18" rx="4" fill="#FFFFFF" stroke={diff === 0 ? "#4DD0E1" : "#FF6B6B"} strokeWidth="1" filter="drop-shadow(0px 1px 2px rgba(0,0,0,0.1))" />
-          <text x="0" y="1" fill={diff === 0 ? "#00B8D4" : "#D32F2F"} fontSize="10" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+        <g transform={`translate(${panRight.x}, ${panRight.y - 14})`} style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}>
+          <rect x="-32" y="-14" width="64" height="24" rx="8" fill="#FFFFFF" stroke={diff === 0 ? "#4DD0E1" : "#FF6B6B"} strokeWidth="2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.2))" />
+          <text x="0" y="3" fill={diff === 0 ? "#0097A7" : "#D32F2F"} fontSize="14" fontFamily="Fredoka" fontWeight="900" textAnchor="middle">
             {rightValue}
           </text>
-          <text x="0" y="32" fill={diff === 0 ? "#80DEEA" : "#FFAB91"} fontSize="9" fontFamily="Fredoka" fontWeight="bold" textAnchor="middle">
+          <text x="0" y="34" fill={diff === 0 ? "#4DD0E1" : "#FF8A80"} fontSize="12" fontFamily="Fredoka" fontWeight="800" textAnchor="middle">
             {rightLabel}
           </text>
         </g>
@@ -142,11 +160,11 @@ export default function BalanceScale({
         <path 
           d={`M ${cx} ${cy - 12} L ${cx + (angle * 0.8)} ${cy - 35}`} 
           stroke="#E53935" 
-          strokeWidth="2.5" 
+          strokeWidth="3.5" 
           strokeLinecap="round"
           style={{ transition: 'all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1)' }}
         />
-        <circle cx={cx} cy={cy - 38} r="2.5" fill="#E53935" />
+        <circle cx={cx} cy={cy - 38} r="3.5" fill="#E53935" />
       </svg>
     </div>
   );

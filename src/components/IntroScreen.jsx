@@ -1,6 +1,6 @@
 import React from 'react';
 import Mascot from './shared/Mascot';
-import { Award, Flame, Zap, Play } from 'lucide-react';
+import { Award, Flame, Zap, Rocket, Sparkles, Search, BookOpen, FlaskConical, Gamepad2, Award as CertificateIcon, X } from 'lucide-react';
 
 const BELTS = [
   { id: 0, color: "#FFFFFF", name: "White Belt", level: "Addition within 30" },
@@ -15,99 +15,172 @@ const BELTS = [
   { id: 9, color: "#FFD700", name: "Gold Belt", level: "Mastery Challenges" }
 ];
 
-export default function IntroScreen({ 
-  xp = 0, 
-  totalStars = 0, 
-  badges = [], 
-  currentWorld = 0, 
-  onStartQuest 
+export default function IntroScreen({
+  xp = 0,
+  totalStars = 0,
+  badges = [],
+  currentWorld = 0,
+  onStartQuest
 }) {
   return (
-    <div className="intro-screen-container">
-      <div className="intro-card-glass">
-        {/* Welcome branding title */}
-        <div className="intro-header-block">
-          <div className="academy-tag font-fredoka">INTELLIA NINJA ACADEMY</div>
-          <h2 className="intro-title font-fredoka">MATH DOJO</h2>
-          <p className="intro-subtitle font-nunito">
-            Master the 4 secret mental shortcuts for adding within 100.
-            Earn colored belts, collect badges, and become a Mental Math Champion!
-          </p>
+    <div className="ss-intro-page-wrapper">
+      {/* Translucent floating background numbers like screenshot */}
+      <div className="ss-bg-floating-numbers" aria-hidden="true">
+        <span className="bg-num num-1">54</span>
+        <span className="bg-num num-2">91</span>
+        <span className="bg-num num-3">11</span>
+        <span className="bg-num num-4">66</span>
+        <span className="bg-num num-5">90</span>
+        <span className="bg-num num-6">64</span>
+        <span className="bg-num num-7">30</span>
+        <span className="bg-num num-8">69</span>
+        <span className="bg-num num-9">90</span>
+      </div>
+
+      {/* Top Right Cyan Exit Button like screenshot */}
+      <button className="ss-top-right-exit-btn" onClick={onStartQuest} aria-label="Exit intro screen">
+        <X size={20} />
+      </button>
+
+      {/* Main Screen Card */}
+      <div className="ss-intro-center-card animate-fade-in">
+        {/* Top Pill Badge */}
+        <div className="ss-top-curriculum-badge font-fredoka">
+          <Sparkles size={14} className="text-gold" />
+          <span>INTELLIA Grade 2 Math</span>
         </div>
 
-        {/* Mascot & Stats Showcase Grid */}
-        <div className="intro-grid-layout">
-          {/* Mascot column */}
-          <div className="intro-mascot-col">
+        {/* Main Title: White text with Gold highlighted word */}
+        <h1 className="ss-main-title font-fredoka">
+          MATH <span className="ss-highlight-yellow">STRATEGIES</span>
+        </h1>
+
+        {/* Mascot Avatar & Speech Bubble Row */}
+        <div className="ss-mascot-speech-row">
+          <div className="ss-mascot-gold-circle">
             <Mascot mood="happy" belt={currentWorld} />
-            <div className="mascot-coach-bubble font-nunito">
-              "Welcome to the Dojo! Wield place-value blocks, bezier number lines, and interactive grids to unlock your math skills!"
-            </div>
           </div>
+          <div className="ss-white-speech-bubble font-nunito">
+            Welcome to the Mental Math Strategies! Wield place-value blocks, bezier number lines, and interactive grids to unlock your math skills! 🚀
+            <div className="ss-bubble-tail" />
+          </div>
+        </div>
 
-          {/* Stats & Belt Map Column */}
-          <div className="intro-stats-col">
-            <h3 className="section-header font-fredoka">Your Stats</h3>
-            <div className="stats-cards-strip">
-              <div className="stat-pill">
-                <Zap size={20} className="color-xp" />
-                <div className="pill-text font-fredoka">
-                  {xp} <span className="pill-sub">XP</span>
+        {/* Narrative Subtitle */}
+        <p className="ss-intro-description font-nunito">
+          Master the 4 secret mental shortcuts for adding within 100.
+          Earn colored belts, collect badges, and become a Mental Math Champion!
+        </p>
+
+        {/* YOUR LEARNING JOURNEY Card */}
+        <div className="ss-learning-journey-box">
+          <h2 className="ss-journey-title font-fredoka">YOUR LEARNING JOURNEY</h2>
+
+          <div className="ss-journey-flow">
+            {/* Top Row: Wonder -> Story -> Simulate */}
+            <div className="ss-journey-row">
+              <div className="ss-journey-node">
+                <div className="ss-node-icon-circle icon-wonder">
+                  <Search size={16} />
+                </div>
+                <div className="ss-node-text">
+                  <span className="ss-node-name font-fredoka">Wonder</span>
+                  <span className="ss-node-sub font-nunito">Spark your curiosity</span>
                 </div>
               </div>
-              <div className="stat-pill">
-                <Award size={20} className="color-star" />
-                <div className="pill-text font-fredoka">
-                  {totalStars} <span className="pill-sub">Stars</span>
+
+              <span className="ss-journey-arrow">→</span>
+
+              <div className="ss-journey-node">
+                <div className="ss-node-icon-circle icon-story">
+                  <BookOpen size={16} />
+                </div>
+                <div className="ss-node-text">
+                  <span className="ss-node-name font-fredoka">Story</span>
+                  <span className="ss-node-sub font-nunito">Hear the tale</span>
                 </div>
               </div>
-              <div className="stat-pill">
-                <Flame size={20} className="color-streak" />
-                <div className="pill-text font-fredoka">
-                  {badges.length} <span className="pill-sub">Badges</span>
+
+              <span className="ss-journey-arrow">→</span>
+
+              <div className="ss-journey-node">
+                <div className="ss-node-icon-circle icon-simulate">
+                  <FlaskConical size={16} />
+                </div>
+                <div className="ss-node-text">
+                  <span className="ss-node-name font-fredoka">Simulate</span>
+                  <span className="ss-node-sub font-nunito">Explore & discover</span>
                 </div>
               </div>
             </div>
 
-            <h3 className="section-header font-fredoka">Dojo Belts Progress</h3>
-            <div className="belts-linear-strip">
-              {BELTS.map((b) => {
-                const isUnlocked = b.id <= currentWorld;
-                return (
-                  <div 
-                    key={b.id} 
-                    className={`belt-linear-node ${isUnlocked ? 'linear-node-unlocked' : 'linear-node-locked'}`}
-                    style={{ borderColor: b.color }}
-                  >
-                    <div className="belt-color-circle" style={{ backgroundColor: b.color }} />
-                    <div className="belt-node-info">
-                      <span className="belt-node-name font-fredoka">{b.name}</span>
-                      <span className="belt-node-level font-nunito">{b.level}</span>
-                    </div>
-                    {isUnlocked ? (
-                      <span className="belt-node-status font-fredoka color-success">✓</span>
-                    ) : (
-                      <span className="belt-node-status font-fredoka color-locked">🔒</span>
-                    )}
-                  </div>
-                );
-              })}
+            {/* Bottom Row: Practice -> Reflect */}
+            <div className="ss-journey-row ss-row-2">
+              <div className="ss-journey-node">
+                <div className="ss-node-icon-circle icon-practice">
+                  <Gamepad2 size={16} />
+                </div>
+                <div className="ss-node-text">
+                  <span className="ss-node-name font-fredoka">Practice</span>
+                  <span className="ss-node-sub font-nunito">Test your skills</span>
+                </div>
+              </div>
+
+              <span className="ss-journey-arrow">→</span>
+
+              <div className="ss-journey-node">
+                <div className="ss-node-icon-circle icon-reflect">
+                  <CertificateIcon size={16} />
+                </div>
+                <div className="ss-node-text">
+                  <span className="ss-node-name font-fredoka">Reflect</span>
+                  <span className="ss-node-sub font-nunito">What did you learn?</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Large green Enter the Dojo Start button */}
-        <div className="intro-actions-row">
-          <button 
-            className="intro-start-btn font-fredoka"
+        {/* CTA Begin Journey Button */}
+        <div className="ss-actions-row">
+          <button
+            className="ss-begin-journey-btn font-fredoka"
             onClick={onStartQuest}
             aria-label="Enter the Dojo and start your math lesson quest"
           >
-            <Play size={20} className="start-icon-pulse" />
-            ENTER THE DOJO
+            <Rocket size={20} />
+            <span>Begin Your Journey!</span>
           </button>
+        </div>
+
+        {/* Bottom 3 Cards */}
+        <div className="ss-bottom-cards-row">
+          <div className="ss-stat-card">
+            <div className="ss-stat-icon-wrapper icon-box-blue">
+              <Zap size={24} />
+            </div>
+            <span className="ss-stat-val font-fredoka">{xp} XP</span>
+            <span className="ss-stat-lbl font-nunito">XP Points</span>
+          </div>
+
+          <div className="ss-stat-card">
+            <div className="ss-stat-icon-wrapper icon-box-red">
+              <Award size={24} />
+            </div>
+            <span className="ss-stat-val font-fredoka">{totalStars} Stars</span>
+            <span className="ss-stat-lbl font-nunito">Stars Earned</span>
+          </div>
+
+          <div className="ss-stat-card">
+            <div className="ss-stat-icon-wrapper icon-box-gold">
+              <Flame size={24} />
+            </div>
+            <span className="ss-stat-val font-fredoka">{badges.length} Badges</span>
+            <span className="ss-stat-lbl font-nunito">3 Game Worlds</span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+

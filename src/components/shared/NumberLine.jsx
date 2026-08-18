@@ -7,10 +7,10 @@ export default function NumberLine({
   jumps = [], // Array of { from, to, label, color }
   activeValue = null
 }) {
-  const width = 650;
-  const height = 160;
-  const padding = 45;
-  const yLine = 100;
+  const width = 680;
+  const height = 190;
+  const padding = 50;
+  const yLine = 120;
 
   // Convert number line value to SVG X coordinate
   const getX = (val) => {
@@ -43,7 +43,7 @@ export default function NumberLine({
     
     // Height of the hop increases slightly with jump distance
     const hopDist = Math.abs(xEnd - xStart);
-    const arcHeight = Math.min(65, 30 + hopDist * 0.15);
+    const arcHeight = Math.min(75, 35 + hopDist * 0.16);
     const yPeak = yLine - arcHeight;
 
     // Bezier control point: directly above center
@@ -57,10 +57,10 @@ export default function NumberLine({
           d={pathData} 
           fill="none" 
           stroke={strokeColor} 
-          strokeWidth="3.5" 
+          strokeWidth="6" 
           strokeLinecap="round"
           className="jump-path-draw"
-          style={{ strokeDasharray: 300, strokeDashoffset: 0 }}
+          style={{ strokeDasharray: 400, strokeDashoffset: 0 }}
         />
         
         {/* Glow behind the arc */}
@@ -68,41 +68,41 @@ export default function NumberLine({
           d={pathData} 
           fill="none" 
           stroke={strokeColor} 
-          strokeWidth="8" 
+          strokeWidth="12" 
           strokeLinecap="round"
-          opacity="0.15"
+          opacity="0.22"
         />
 
-        {/* Small Arrowhead at end */}
+        {/* Arrowhead at end */}
         <path 
-          d={`M ${xEnd - 8} ${yLine - 6} L ${xEnd} ${yLine} L ${xEnd - 8} ${yLine + 6}`} 
+          d={`M ${xEnd - 10} ${yLine - 8} L ${xEnd} ${yLine} L ${xEnd - 10} ${yLine + 8}`} 
           fill="none" 
           stroke={strokeColor} 
-          strokeWidth="2.5" 
+          strokeWidth="4" 
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
         {/* Jump Value Label Bubble (+3, +10, etc.) */}
-        <g transform={`translate(${xMid}, ${yPeak - 16})`}>
+        <g transform={`translate(${xMid}, ${yPeak - 20})`}>
           <rect 
-            x="-21" 
-            y="-12" 
-            width="42" 
-            height="24" 
-            rx="12" 
+            x="-26" 
+            y="-15" 
+            width="52" 
+            height="30" 
+            rx="15" 
             fill={strokeColor} 
             stroke="#FFFFFF" 
-            strokeWidth="1.5" 
-            filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.15))"
+            strokeWidth="2.5" 
+            filter="drop-shadow(0px 3px 6px rgba(0,0,0,0.25))"
           />
           <text 
             x="0" 
-            y="5" 
+            y="6" 
             fill="#FFFFFF" 
-            fontSize="13" 
+            fontSize="17" 
             fontFamily="Fredoka"
-            fontWeight="bold" 
+            fontWeight="900" 
             textAnchor="middle"
           >
             {jump.label}
@@ -113,7 +113,7 @@ export default function NumberLine({
   };
 
   return (
-    <div className="number-line-wrapper">
+    <div className="number-line-wrapper" style={{ width: '100%', maxWidth: '680px', margin: '0 auto' }}>
       <svg 
         viewBox={`0 0 ${width} ${height}`} 
         width="100%" 
@@ -121,33 +121,33 @@ export default function NumberLine({
         xmlns="http://www.w3.org/2000/svg"
         className="number-line-svg"
       >
-        {/* Main horizontal line */}
+        {/* Main horizontal line / bar */}
         <line 
           x1={padding - 10} 
           y1={yLine} 
           x2={width - padding + 10} 
           y2={yLine} 
-          stroke="#90A4AE" 
-          strokeWidth="3.5" 
+          stroke="#B0BEC5" 
+          strokeWidth="7" 
           strokeLinecap="round" 
         />
 
         {/* Left Arrowhead */}
         <path 
-          d={`M ${padding - 18} ${yLine - 6} L ${padding - 24} ${yLine} L ${padding - 18} ${yLine + 6}`} 
+          d={`M ${padding - 20} ${yLine - 8} L ${padding - 28} ${yLine} L ${padding - 20} ${yLine + 8}`} 
           fill="none" 
-          stroke="#90A4AE" 
-          strokeWidth="3.5" 
+          stroke="#B0BEC5" 
+          strokeWidth="5" 
           strokeLinecap="round" 
           strokeLinejoin="round" 
         />
 
         {/* Right Arrowhead */}
         <path 
-          d={`M ${width - padding + 18} ${yLine - 6} L ${width - padding + 24} ${yLine} L ${width - padding + 18} ${yLine + 6}`} 
+          d={`M ${width - padding + 20} ${yLine - 8} L ${width - padding + 28} ${yLine} L ${width - padding + 20} ${yLine + 8}`} 
           fill="none" 
-          stroke="#90A4AE" 
-          strokeWidth="3.5" 
+          stroke="#B0BEC5" 
+          strokeWidth="5" 
           strokeLinecap="round" 
           strokeLinejoin="round" 
         />
@@ -162,22 +162,22 @@ export default function NumberLine({
               {/* Tick line */}
               <line 
                 x1={tick.x} 
-                y1={yLine - (isMarked || isActive ? 8 : 4)} 
+                y1={yLine - (isMarked || isActive ? 12 : 7)} 
                 x2={tick.x} 
-                y2={yLine + (isMarked || isActive ? 8 : 4)} 
-                stroke={isActive ? "#FFC72C" : isMarked ? "#4DD0E1" : "#B0BEC5"} 
-                strokeWidth={isMarked || isActive ? "2.5" : "1.5"} 
+                y2={yLine + (isMarked || isActive ? 12 : 7)} 
+                stroke={isActive ? "#FFC72C" : isMarked ? "#4DD0E1" : "#CFD8DC"} 
+                strokeWidth={isMarked || isActive ? "4" : "2.5"} 
               />
               
               {/* Label */}
               {tick.hasLabel && (
                 <text 
                   x={tick.x} 
-                  y={yLine + 32} 
-                  fill={isActive ? "#FFC72C" : isMarked ? "#4DD0E1" : "#B0BEC5"} 
-                  fontSize={isMarked || isActive ? "16" : "13"} 
+                  y={yLine + 36} 
+                  fill={isActive ? "#FFC72C" : isMarked ? "#4DD0E1" : "#E2D8FF"} 
+                  fontSize={isMarked || isActive ? "20" : "16"} 
                   fontFamily="Fredoka"
-                  fontWeight={isMarked || isActive ? "bold" : "medium"}
+                  fontWeight={isMarked || isActive ? "900" : "700"}
                   textAnchor="middle"
                 >
                   {tick.value}
@@ -186,16 +186,16 @@ export default function NumberLine({
 
               {/* Special Flags for marked checkpoints */}
               {isMarked && (
-                <g transform={`translate(${tick.x}, ${yLine - 10})`}>
-                  <circle cx="0" cy="0" r="4.5" fill="#4DD0E1" stroke="#FFFFFF" strokeWidth="1.5" />
+                <g transform={`translate(${tick.x}, ${yLine - 14})`}>
+                  <circle cx="0" cy="0" r="6" fill="#4DD0E1" stroke="#FFFFFF" strokeWidth="2" />
                 </g>
               )}
 
               {/* Glowing ring for active focus point */}
               {isActive && (
                 <g transform={`translate(${tick.x}, ${yLine})`}>
-                  <circle cx="0" cy="0" r="9" fill="none" stroke="#FFC72C" strokeWidth="2.5" opacity="0.8" className="pulse-glow-ring" />
-                  <circle cx="0" cy="0" r="4" fill="#FFC72C" />
+                  <circle cx="0" cy="0" r="14" fill="none" stroke="#FFC72C" strokeWidth="3.5" opacity="0.9" className="pulse-glow-ring" />
+                  <circle cx="0" cy="0" r="6.5" fill="#FFC72C" />
                 </g>
               )}
             </g>

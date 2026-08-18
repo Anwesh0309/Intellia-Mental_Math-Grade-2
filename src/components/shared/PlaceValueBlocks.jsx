@@ -18,8 +18,8 @@ export default function PlaceValueBlocks({
   const cubeSize = isSm ? 10 : isLg ? 16 : 14;
   const gap = isSm ? 4 : isLg ? 8 : 6;
 
-  // Render a Single Tens Rod (a blue rectangle divided into 10 smaller parts)
-  const renderTensRod = (index, isInteractivePart = false) => {
+  // Render a Single Tens Rod
+  const renderTensRod = (index) => {
     const x = index * (rodWidth + gap);
     const segmentHeight = rodHeight / 10;
     const segments = Array.from({ length: 10 });
@@ -28,7 +28,8 @@ export default function PlaceValueBlocks({
       <g 
         key={`tens-${index}`} 
         className={`tens-rod-group ${interactive && !disabled ? 'interactive-block' : ''}`}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           if (interactive && !disabled && onAction) {
             onAction('ten', index);
           }
@@ -82,9 +83,8 @@ export default function PlaceValueBlocks({
     );
   };
 
-  // Render a Single Ones Cube (a small yellow square)
-  const renderOnesCube = (index, isInteractivePart = false) => {
-    // Layout ones cubes in a nice compact vertical grid of up to 5 in a row
+  // Render a Single Ones Cube
+  const renderOnesCube = (index) => {
     const row = index % 5;
     const col = Math.floor(index / 5);
     const x = col * (cubeSize + gap);
@@ -94,7 +94,8 @@ export default function PlaceValueBlocks({
       <g 
         key={`ones-${index}`} 
         className={`ones-cube-group ${interactive && !disabled ? 'interactive-block' : ''}`}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           if (interactive && !disabled && onAction) {
             onAction('one', index);
           }
@@ -135,31 +136,65 @@ export default function PlaceValueBlocks({
   };
 
   // Compute overall viewport bounding box based on rod & cube count
-  const maxTensWidth = Math.max(1, tens) * (rodWidth + gap);
-  const maxOnesColCount = Math.max(1, Math.ceil(ones / 5));
+  const displayTens = Math.max(1, tens);
+  const displayOnes = Math.max(1, ones);
+  const maxTensWidth = displayTens * (rodWidth + gap);
+  const maxOnesColCount = Math.max(1, Math.ceil(displayOnes / 5));
   const maxOnesWidth = maxOnesColCount * (cubeSize + gap);
   
-  const width = Math.max(80, maxTensWidth + maxOnesWidth + 30);
+  const width = Math.max(140, maxTensWidth + maxOnesWidth + 30);
   const height = Math.max(rodHeight + 5, 5 * (cubeSize + gap) + 5);
 
   return (
-    <div className={`place-value-container blocks-${type}`}>
+    <div 
+      className={`place-value-container blocks-${type}`}
+      onClick={() => {
+        if (interactive && !disabled && onAction) {
+          onAction('ten');
+        }
+      }}
+      style={{ 
+        cursor: interactive && !disabled ? 'pointer' : 'default',
+        minWidth: '120px',
+        minHeight: '60px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <svg 
         viewBox={`0 0 ${width} ${height}`} 
         width="100%" 
         height="100%" 
         className="blocks-svg"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ overflow: 'visible' }}
       >
+        {/* Ghost placeholder when 0 tens */}
+        {tens === 0 && (
+          <g transform="translate(5, 2)" opacity="0.35">
+            <rect x={0} y={0} width={rodWidth} height={rodHeight} fill="none" stroke="#7C4DFF" strokeWidth="1.5" strokeDasharray="3 3" rx="3" />
+          </g>
+        )}
         {/* Tens rods section */}
-        <g transform="translate(5, 2)">
-          {Array.from({ length: tens }).map((_, idx) => renderTensRod(idx, type.startsWith('to-add')))}
-        </g>
+        {tens > 0 && (
+          <g transform="translate(5, 2)">
+            {Array.from({ length: tens }).map((_, idx) => renderTensRod(idx))}
+          </g>
+        )}
 
-        {/* Ones cubes section - right shifted relative to rods */}
-        <g transform={`translate(${Math.max(1, tens) * (rodWidth + gap) + 20}, 2)`}>
-          {Array.from({ length: ones }).map((_, idx) => renderOnesCube(idx, type.startsWith('to-add')))}
-        </g>
+        {/* Ghost placeholder when 0 ones */}
+        {ones === 0 && (
+          <g transform={`translate(${displayTens * (rodWidth + gap) + 20}, 2)`} opacity="0.35">
+            <rect x={0} y={0} width={cubeSize} height={cubeSize} fill="none" stroke="#FFC72C" strokeWidth="1.5" strokeDasharray="2 2" rx="2" />
+          </g>
+        )}
+        {/* Ones cubes section */}
+        {ones > 0 && (
+          <g transform={`translate(${displayTens * (rodWidth + gap) + 20}, 2)`}>
+            {Array.from({ length: ones }).map((_, idx) => renderOnesCube(idx))}
+          </g>
+        )}
       </svg>
     </div>
   );

@@ -4,17 +4,17 @@ import PlaceValueBlocks from '../shared/PlaceValueBlocks';
 import NumberLine from '../shared/NumberLine';
 import HundredsChart from '../shared/HundredsChart';
 import BalanceScale from '../shared/BalanceScale';
-import { CheckCircle, Trophy, ArrowRight } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { playSound } from '../../utils/audio';
 import { narrate, stopNarration } from '../../utils/audio';
 import { shuffleArray } from '../../utils/shuffle';
 import * as narrations from '../../utils/narration';
 
 const BASE_STATIONS = [
-  { id: 0, key: "decompose", name: "1. Decompose Sandbox", desc: "Add Tens, Then Ones" },
-  { id: 1, key: "bridgeTen", name: "2. Bridge Ten Sandbox", desc: "Make the Next Ten" },
-  { id: 2, key: "hundredsChart", name: "3. Hundreds Chart Sandbox", desc: "Jump Rows & Columns" },
-  { id: 3, key: "compensate", name: "4. Compensation Sandbox", desc: "Round and Adjust" }
+  { id: 0, key: "decompose", name: "Concrete Grouping", icon: "🍎", desc: "Add Tens, Then Ones" },
+  { id: 1, key: "bridgeTen", name: "Bridge Ten", icon: "⭕", desc: "Make the Next Ten" },
+  { id: 2, key: "hundredsChart", name: "Hundreds Chart", icon: "✏️", desc: "Jump Rows & Columns" },
+  { id: 3, key: "compensate", name: "Compensation", icon: "📊", desc: "Round and Adjust" }
 ];
 
 const STATION_VARIANTS = {
@@ -124,6 +124,20 @@ export default function SimulatePhase({
     return () => stopNarration();
   }, [audioEnabled, activeStation]);
 
+  // Ensure Station 3 (Hundreds Chart) syncs startCell correctly
+  useEffect(() => {
+    if (activeStation === 2) {
+      const startCell = activeStationData.startCell || activeStationData.addend1 || 46;
+      setS3CurrentCell(startCell);
+      setS3Path(new Set([startCell]));
+      setS3TensAdded(0);
+      setS3OnesAdded(0);
+    } else if (activeStation === 3) {
+      setS4Rounded(false);
+      setS4Adjusted(false);
+    }
+  }, [activeStation, activeStationData.startCell, activeStationData.addend1]);
+
   // Reset station states for replayability
   const resetStation = (index) => {
     const stationConfig = simStations[index] || {};
@@ -136,7 +150,7 @@ export default function SimulatePhase({
       setS2SplitDone(false);
       setS2JumpsAdded(0);
     } else if (index === 2) {
-      const startCell = stationConfig.startCell || 45;
+      const startCell = stationConfig.startCell || stationConfig.addend1 || 46;
       setS3CurrentCell(startCell);
       setS3Path(new Set([startCell]));
       setS3TensAdded(0);
@@ -150,22 +164,30 @@ export default function SimulatePhase({
   };
 
   // ==========================================
-  // STATION 1: INTERACTION
+  // STATION 1: INTERACTION (Section A: Decompose)
   // ==========================================
-  const handleS1BlockTap = (type) => {
-    if (s1Step === 1 && type === 'ten' && s1AddedTens < s1TensTarget) {
-      const nextTens = s1AddedTens + 1;
-      setS1AddedTens(nextTens);
-      playSound('chime');
-      if (nextTens === s1TensTarget) {
-        setS1Step(2);
+  const handleS1BlockTap = () => {
+    if (s1Step === 1) {
+      if (s1AddedTens < s1TensTarget) {
+        const nextTens = s1AddedTens + 1;
+        setS1AddedTens(nextTens);
+        playSound('chime');
+        if (nextTens >= s1TensTarget) {
+          if (s1OnesTarget > 0) {
+            setS1Step(2);
+          } else {
+            setS1Step(3);
+          }
+        }
       }
-    } else if (s1Step === 2 && type === 'one' && s1AddedOnes < s1OnesTarget) {
-      const nextOnes = s1AddedOnes + 1;
-      setS1AddedOnes(nextOnes);
-      playSound('chime');
-      if (nextOnes === s1OnesTarget) {
-        setS1Step(3);
+    } else if (s1Step === 2) {
+      if (s1AddedOnes < s1OnesTarget) {
+        const nextOnes = s1AddedOnes + 1;
+        setS1AddedOnes(nextOnes);
+        playSound('chime');
+        if (nextOnes >= s1OnesTarget) {
+          setS1Step(3);
+        }
       }
     }
   };
@@ -173,26 +195,23 @@ export default function SimulatePhase({
   // ==========================================
   // STATION 2: INTERACTION
   // ==========================================
-  const handleS2SplitTap = () => {
+  const handleS2Split = () => {
     setS2SplitDone(true);
     playSound('chime');
   };
 
-  const handleS2JumpTap = () => {
-    if (s2JumpsAdded === 0) {
-      setS2JumpsAdded(1);
-      playSound('chime');
-    } else if (s2JumpsAdded === 1) {
-      setS2JumpsAdded(2);
+  const handleS2AddJump = (jumpIndex) => {
+    if (s2SplitDone && s2JumpsAdded === jumpIndex) {
+      setS2JumpsAdded(jumpIndex + 1);
       playSound('chime');
     }
   };
 
   // ==========================================
-  // STATION 3: INTERACTION
+  // STATION 3: INTERACTION (Section C: Hundreds Chart)
   // ==========================================
   const handleS3JumpDown = () => {
-    if (s3TensAdded < 2) {
+    if (s3TensAdded < s3TensTarget) {
       const nextCell = s3CurrentCell + 10;
       setS3CurrentCell(nextCell);
       setS3Path(prev => {
@@ -221,17 +240,29 @@ export default function SimulatePhase({
   };
 
   // ==========================================
-  // STATION 4: INTERACTION
+  // STATION 4: INTERACTION (Section D: Compensation)
   // ==========================================
-  const handleS4Round = () => {
-    setS4Rounded(true);
-    playSound('chime');
+  const handleS4Round = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!s4Rounded) {
+      setS4Rounded(true);
+      playSound('chime');
+      if (audioEnabled) {
+        narrate(`Rounding ${activeStationData.addend2} up to ${s4RoundedValue} makes the scale ${s4AdjustBy} too heavy!`, true);
+      }
+    }
   };
 
-  const handleS4Adjust = () => {
-    if (s4Rounded) {
+  const handleS4Adjust = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (s4Rounded && !s4Adjusted) {
       setS4Adjusted(true);
+      // Auto-prefill the final answer input for seamless Grade 2 UX
+      setStationAnswers(prev => ({ ...prev, [3]: String(activeStationData.correct) }));
       playSound('chime');
+      if (audioEnabled) {
+        narrate(`Subtracting ${s4AdjustBy} balances the scale perfectly at ${activeStationData.correct}!`, true);
+      }
     }
   };
 
@@ -289,351 +320,400 @@ export default function SimulatePhase({
     (activeStation === 3 && s4Adjusted)
   );
 
-  const allCompleted = simStationsComplete.every(Boolean);
-
   return (
     <>
-      <div className="phase-card-wrapper simulate-phase-container">
-      {/* Banner */}
-      <div className="phase-banner-header simulate-banner">
-        <h2 className="phase-banner-title font-fredoka">PHASE 3: SIMULATE ⚙️</h2>
-        <span className="phase-banner-subtitle">Sandbox Stations: Build Strategy Muscle Memory</span>
-      </div>
+      <div className="ss-simulate-page-container animate-fade-in">
+        {/* Header Title and Subtitle */}
+        <div className="ss-sim-header-group">
+          <h2 className="ss-sim-title font-fredoka">🧪 Strategy Sandbox</h2>
+          <p className="ss-sim-subtitle font-nunito">Master Mental Math Shortest Paths!</p>
 
-      <div className="sandbox-layout-grid">
-        {/* Left Column: Stations Navigator & Checklist */}
-        <div className="sandbox-sidebar">
-          <h3 className="sidebar-title font-fredoka">Sandbox Stations</h3>
-          <div className="stations-checklist">
+          {/* 4 Station Strategy Tab Buttons */}
+          <div className="ss-sim-tabs-row">
             {simStations.map((st) => {
-              const isDone = simStationsComplete[st.id];
               const isActive = activeStation === st.id;
+              const isDone = simStationsComplete[st.id];
 
               return (
                 <button
                   key={st.id}
-                  className={`station-nav-card ${isActive ? 'station-card-active' : ''}`}
                   onClick={() => setActiveStation(st.id)}
-                  aria-label={`Open ${st.name}`}
+                  className={`ss-sim-tab-btn ${isActive ? 'tab-active' : ''} ${isDone ? 'tab-complete' : ''}`}
+                  title={st.name}
+                  aria-label={`Switch to ${st.name}`}
                 >
-                  <div className="station-card-meta">
-                    <span className="station-card-name font-fredoka">{st.name}</span>
-                    <span className="station-card-strategy font-nunito">{st.desc}</span>
-                    <span className="station-card-problem font-fredoka text-primary">{st.problem}</span>
-                  </div>
-                  {isDone ? (
-                    <CheckCircle size={22} className="color-success" />
-                  ) : (
-                    <div className="circle-incomplete-ring" />
-                  )}
+                  <span className="tab-icon">{st.icon}</span>
+                  <span className="tab-label font-fredoka">{st.name}</span>
+                  {isDone && <CheckCircle size={14} style={{ color: '#22c55e', marginLeft: '2px' }} />}
                 </button>
               );
             })}
           </div>
-
-          {/* Coach Advice */}
-          <div className="sandbox-coach-card mascot-bubble-glow font-nunito">
-            <div className="avatar-small">
-              <Mascot mood={allCompleted ? "celebrating" : "teaching"} />
-            </div>
-            <p className="coach-advice-text">
-              {allCompleted 
-                ? "Perfect! You have completed all four sandbox sandboxes. You are ready to enter the Dojo play arena!"
-                : "Tap the highlighted rods, scales, or jump arrows to practice each shortcut step-by-step!"}
-            </p>
-          </div>
-          
-          {allCompleted && (
-            <button 
-              onClick={onComplete}
-              className="sandbox-unlock-btn font-fredoka animate-pulse"
-              aria-label="Unlock the Play Dojo quiz"
-            >
-              UNLOCK PLAY DOJO <ArrowRight size={18} />
-            </button>
-          )}
         </div>
 
-        {/* Right Column: Active Simulation Area */}
-        <div className="sandbox-main-area">
+        {/* Main Simulation Sandbox Glass Box matching screenshot */}
+        <div className="ss-sim-sandbox-card animate-fade-in">
+          <h3 className="ss-sim-card-title font-fredoka">
+            {activeStationData.icon} {activeStationData.name}
+          </h3>
+          <p className="ss-sim-card-desc font-nunito">
+            Solve <strong>{activeStationData.problem}</strong> by following the mental shortcut steps below!
+          </p>
+
           {/* Station 1: Decompose */}
           {activeStation === 0 && (
             <div className="sim-station-box">
               <div className="sim-station-header">
-                <h3 className="sim-station-title font-fredoka">Sandbox 1: Add Tens, Then Ones</h3>
-                <button onClick={() => resetStation(0)} className="sim-reset-btn font-fredoka">Reset</button>
+                <button onClick={() => resetStation(0)} className="sim-reset-btn font-fredoka" style={{ padding: '0.3rem 0.85rem', fontSize: '0.88rem' }}>Reset</button>
               </div>
-              <p className="sim-instructions font-nunito">
-                Solve <strong>{activeStationData.problem}</strong> mentally. First, add the tens rods from {activeStationData.addend2} to {activeStationData.addend1}.
-                Then, add the ones cubes.
-              </p>
 
-              <div className="sim-visual-arena-decompose">
-                {/* Left Pile (Base) */}
-                <div className="sim-decompose-column">
-                  <h4 className="column-subhead font-fredoka">Starting Pile ({activeStationData.addend1})</h4>
-                  <PlaceValueBlocks tens={Math.floor(activeStationData.addend1 / 10)} ones={activeStationData.addend1 % 10} size="md" />
-                </div>
+              <div className="sim-workspace-blocks">
+                <div className="sim-placevalue-row" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: '1rem', flexWrap: 'nowrap', width: '100%' }}>
+                  <div className="block-group-box" style={{ flex: '1 1 0', maxWidth: '360px', background: 'rgba(18, 10, 51, 0.4)', padding: '0.75rem 1.1rem', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
+                    <span className="group-title font-fredoka" style={{ color: '#E2D8FF', display: 'block', marginBottom: '0.4rem', fontSize: '1.15rem', fontWeight: 800 }}>Start with {activeStationData.addend1}</span>
+                    <PlaceValueBlocks tens={Math.floor(activeStationData.addend1 / 10)} ones={activeStationData.addend1 % 10} size="md" />
+                  </div>
 
-                {/* Center Addition Target */}
-                <div className="sim-decompose-target font-fredoka">
-                  <div className="target-math-op">+</div>
-                  <div className="target-math-box">
-                    <span className="target-box-label font-fredoka">Added Pile</span>
-                    <PlaceValueBlocks tens={s1AddedTens} ones={s1AddedOnes} size="sm" type="added-tens" />
+                  <div className="sim-plus-sign font-fredoka" style={{ fontSize: '2.2rem', color: '#FFC72C', fontWeight: 900, flexShrink: 0 }}>+</div>
+
+                  <div 
+                    className="block-group-box interactive-block-area"
+                    onClick={() => {
+                      if (s1Step < 3) handleS1BlockTap();
+                    }}
+                    style={{ 
+                      flex: '1 1 0',
+                      maxWidth: '360px',
+                      background: s1Step < 3 ? 'rgba(124, 77, 255, 0.2)' : 'rgba(18, 10, 51, 0.4)', 
+                      padding: '0.75rem 1.1rem', 
+                      borderRadius: '18px', 
+                      border: s1Step < 3 ? '2px dashed #7C4DFF' : '1px solid rgba(255, 255, 255, 0.1)', 
+                      textAlign: 'center',
+                      cursor: s1Step < 3 ? 'pointer' : 'default',
+                      transition: 'all 0.2s ease'
+                    }}
+                    title={s1Step === 1 ? "Tap to add Ten Rod" : s1Step === 2 ? "Tap to add Unit Cube" : ""}
+                  >
+                    <span className="group-title font-fredoka" style={{ color: '#E2D8FF', display: 'block', marginBottom: '0.4rem', fontSize: '1.2rem', fontWeight: 800 }}>
+                      Add {activeStationData.addend2} ({s1TensTarget} Tens, {s1OnesTarget} Ones)
+                    </span>
+                    <PlaceValueBlocks 
+                      tens={s1AddedTens} 
+                      ones={s1AddedOnes} 
+                      size="md" 
+                      type="to-add-tens" 
+                      interactive={s1Step < 3}
+                      onAction={() => handleS1BlockTap()}
+                    />
+                    {s1Step < 3 && (
+                      <span className="tap-hint-label font-fredoka" style={{ display: 'block', marginTop: '0.45rem', color: '#FFC72C', fontSize: '1.05rem', fontWeight: 900 }}>
+                        👈 {s1Step === 1 ? 'Tap block box or button below to add Tens' : 'Tap block box or button below to add Ones'}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Right Source Pile */}
-                <div className="sim-decompose-column">
-                  <h4 className="column-subhead font-fredoka">Add from here ({activeStationData.addend2})</h4>
-                  <PlaceValueBlocks 
-                    tens={s1TensTarget - s1AddedTens} 
-                    ones={s1OnesTarget - s1AddedOnes} 
-                    size="md" 
-                    interactive={true} 
-                    onAction={handleS1BlockTap}
-                    type={s1Step === 1 ? "to-add-tens" : "to-add-ones"}
-                    disabled={s1Step === 3}
-                  />
-                  <span className="tap-hint-label font-fredoka">
-                    {s1Step === 1 ? `👆 Tap a tens rod to add (+${s1TensTarget * 10})` : s1Step === 2 ? `👆 Tap ones cubes to add (+${s1OnesTarget})` : "Completed!"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Equations workflow */}
-              <div className="sim-equations-row font-fredoka">
-                <div className={`sim-eq-card ${s1Step > 1 ? 'eq-card-passed' : s1Step === 1 ? 'eq-card-active' : ''}`}>
-                  <span className="eq-step-num">Step 1 (Add Tens)</span>
-                  <div className="eq-math-display">{activeStationData.addend1} + {s1AddedTens * 10} = {activeStationData.addend1 + s1AddedTens * 10}</div>
-                  <span className="eq-status-sub">{s1AddedTens === s1TensTarget ? "Completed ✓" : `Tap rods to add ${s1TensTarget * 10}`}</span>
-                </div>
-                <div className={`sim-eq-card ${s1Step === 3 ? 'eq-card-passed' : s1Step === 2 ? 'eq-card-active' : 'eq-card-locked'}`}>
-                  <span className="eq-step-num">Step 2 (Add Ones)</span>
-                  <div className="eq-math-display">{activeStationData.addend1 + (s1TensTarget * 10)} + {s1AddedOnes} = {activeStationData.addend1 + (s1TensTarget * 10) + s1AddedOnes}</div>
-                  <span className="eq-status-sub">{s1AddedOnes === s1OnesTarget ? "Completed ✓" : s1Step === 2 ? `Tap cubes to add ${s1OnesTarget}` : "Locked"}</span>
-                </div>
+                {!stepsFinished && (
+                  <div className="sim-interactive-controls mt-3" style={{ display: 'flex', justifyContent: 'center' }}>
+                    {s1Step === 1 && (
+                      <button 
+                        onClick={() => handleS1BlockTap()} 
+                        className="sim-action-trigger-btn font-fredoka animate-pulse"
+                        style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
+                      >
+                        ➕ Tap to Add 10 Rod ({s1AddedTens}/{s1TensTarget} Tens Added)
+                      </button>
+                    )}
+                    {s1Step === 2 && (
+                      <button 
+                        onClick={() => handleS1BlockTap()} 
+                        className="sim-action-trigger-btn font-fredoka animate-pulse"
+                        style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
+                      >
+                        ➕ Tap to Add 1 Unit Cube ({s1AddedOnes}/{s1OnesTarget} Ones Added)
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Station 2: Bridge Ten */}
+          {/* Station 2: Bridge to 10 (Section B) */}
           {activeStation === 1 && (
             <div className="sim-station-box">
               <div className="sim-station-header">
-                <h3 className="sim-station-title font-fredoka">Sandbox 2: Make the Next Ten</h3>
-                <button onClick={() => resetStation(1)} className="sim-reset-btn font-fredoka">Reset</button>
+                <button onClick={() => resetStation(1)} className="sim-reset-btn font-fredoka" style={{ padding: '0.3rem 0.85rem', fontSize: '0.88rem' }}>Reset</button>
               </div>
-              <p className="sim-instructions font-nunito">
-                Solve <strong>{activeStationData.problem}</strong> mentally. {s2Start} is close to {s2NextTen}.
-                How much does it need? Split {activeStationData.addend2} to bridge the next ten first!
-              </p>
 
-              {/* Interactive splitter block */}
-              <div className="sim-split-interactive-row">
-                <div className="split-num-block font-fredoka bg-primary">{s2Start}</div>
-                <div className="split-num-operator font-fredoka">+</div>
-                
-                {/* addend split panel */}
-                {!s2SplitDone ? (
-                  <button 
-                    onClick={handleS2SplitTap} 
-                    className="split-num-bubble-btn font-fredoka animate-pulse"
-                    aria-label={`Split ${activeStationData.addend2} to bridge the ten`}
-                  >
-                    {activeStationData.addend2}
-                    <span className="bubble-tap-sub font-nunito">Tap to Split</span>
-                  </button>
-                ) : (
-                  <div className="split-visual-arms animate-bounce-in">
-                    <div className="split-source-six font-fredoka">{activeStationData.addend2}</div>
-                    <div className="split-connector-lines" />
-                    <div className="split-branches-row">
-                      <div className="split-leaf-node font-fredoka bg-success">
-                        {s2NeedToNextTen}
-                        <span className="leaf-label font-nunito">(needs {s2NeedToNextTen})</span>
-                      </div>
-                      <div className="split-leaf-node font-fredoka bg-warning">
-                        {s2Remainder}
-                        <span className="leaf-label font-nunito">(leftover)</span>
-                      </div>
-                    </div>
-                  </div>
+              <div 
+                className="sim-workspace-numberline interactive-block-area"
+                onClick={() => {
+                  if (!stepsFinished) {
+                    if (!s2SplitDone) handleS2Split();
+                    else if (s2JumpsAdded === 0) handleS2AddJump(0);
+                    else if (s2JumpsAdded === 1) handleS2AddJump(1);
+                  }
+                }}
+                style={{ 
+                  background: !stepsFinished ? 'rgba(124, 77, 255, 0.15)' : 'rgba(18, 10, 51, 0.4)',
+                  padding: '0.85rem 1.2rem',
+                  borderRadius: '18px',
+                  border: !stepsFinished ? '2px dashed #7C4DFF' : '1px solid rgba(255, 255, 255, 0.1)',
+                  cursor: !stepsFinished ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'center'
+                }}
+              >
+                <NumberLine 
+                  min={s2Start - 2} 
+                  max={s2Start + s2Addend + 4} 
+                  marked={[s2Start, s2SplitDone ? s2NextTen : null, s2JumpsAdded === 2 ? activeStationData.correct : null].filter(Boolean)} 
+                  jumps={[
+                    s2JumpsAdded >= 1 ? { from: s2Start, to: s2NextTen, label: `+${s2NeedToNextTen}`, color: "#4CAF50" } : null,
+                    s2JumpsAdded >= 2 ? { from: s2NextTen, to: activeStationData.correct, label: `+${s2Remainder}`, color: "#FF9800" } : null
+                  ].filter(Boolean)}
+                  activeValue={s2JumpsAdded === 2 ? activeStationData.correct : s2JumpsAdded === 1 ? s2NextTen : s2Start}
+                />
+                {!stepsFinished && (
+                  <span className="tap-hint-label font-fredoka" style={{ display: 'block', marginTop: '0.45rem', color: '#FFC72C', fontSize: '1.05rem', fontWeight: 900 }}>
+                    👈 Tap number line or button below to advance
+                  </span>
                 )}
               </div>
 
-              {/* Number Line Visualizations */}
-              {s2SplitDone && (
-                <div className="sim-number-line-section animate-fade-in">
-                  <h4 className="section-title-sub font-fredoka">Draw hops on the number line</h4>
-                  <NumberLine 
-                    min={Math.max(0, s2Start - 3)} 
-                    max={s2Start + s2Addend + 4} 
-                    marked={[s2Start, s2NextTen, s2Start + s2Addend]} 
-                    jumps={[
-                      ...(s2JumpsAdded >= 1 ? [{ from: s2Start, to: s2NextTen, label: `+${s2NeedToNextTen}`, color: "#4CAF50" }] : []),
-                      ...(s2JumpsAdded >= 2 ? [{ from: s2NextTen, to: s2Start + s2Addend, label: `+${s2Remainder}`, color: "#FF9800" }] : [])
-                    ]}
-                    activeValue={s2JumpsAdded === 0 ? s2Start : s2JumpsAdded === 1 ? s2NextTen : s2Start + s2Addend}
-                  />
-
-                  <div className="sim-eq-flow font-fredoka">
-                    {s2JumpsAdded === 0 && (
-                      <button onClick={handleS2JumpTap} className="sim-action-trigger-btn font-fredoka animate-pulse">
-                        Jump to {s2NextTen} (+{s2NeedToNextTen})
-                      </button>
-                    )}
-                    {s2JumpsAdded === 1 && (
-                      <button onClick={handleS2JumpTap} className="sim-action-trigger-btn font-fredoka animate-pulse bg-warning">
-                        Jump the rest (+{s2Remainder})
-                      </button>
-                    )}
-                    {s2JumpsAdded === 2 && (
-                      <div className="sim-mastered-strip text-success font-fredoka">
-                        Double Hop Complete: {s2Start} + {s2NeedToNextTen} = {s2NextTen} ➔ {s2NextTen} + {s2Remainder} = {s2Start + s2Addend} ✓
-                      </div>
-                    )}
-                  </div>
+              {!stepsFinished && (
+                <div className="sim-interactive-controls mt-3 font-fredoka flex justify-center">
+                  {!s2SplitDone ? (
+                    <button 
+                      onClick={handleS2Split} 
+                      className="sim-action-trigger-btn font-fredoka animate-pulse"
+                      style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
+                    >
+                      1. Split +{s2Addend} into (+{s2NeedToNextTen} to reach {s2NextTen}) and (+{s2Remainder} remaining)
+                    </button>
+                  ) : s2JumpsAdded === 0 ? (
+                    <button 
+                      onClick={() => handleS2AddJump(0)} 
+                      className="sim-action-trigger-btn font-fredoka animate-pulse"
+                      style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
+                    >
+                      2. Jump +{s2NeedToNextTen} from {s2Start} ➔ {s2NextTen} (Make 10!)
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleS2AddJump(1)} 
+                      className="sim-action-trigger-btn font-fredoka animate-pulse"
+                      style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
+                    >
+                      3. Jump remaining +{s2Remainder} from {s2NextTen} ➔ {activeStationData.correct}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* Station 3: Hundreds Chart */}
+          {/* Station 3: Hundreds Chart (Section C) */}
           {activeStation === 2 && (
             <div className="sim-station-box">
               <div className="sim-station-header">
-                <h3 className="sim-station-title font-fredoka">Sandbox 3: Hundreds Chart Jumps</h3>
-                <button onClick={() => resetStation(2)} className="sim-reset-btn font-fredoka">Reset</button>
+                <button onClick={() => resetStation(2)} className="sim-reset-btn font-fredoka" style={{ padding: '0.3rem 0.85rem', fontSize: '0.88rem' }}>Reset</button>
               </div>
-              <p className="sim-instructions font-nunito">
-                Solve <strong>{activeStationData.problem}</strong> using grid jumps.
-                Jump down {s3TensTarget} rows to add {s3TensTarget * 10}, then jump right {s3OnesTarget} squares to add {s3OnesTarget}.
-              </p>
 
-              <div className="sim-grid-arena-layout">
-                {/* Hundreds Grid panel */}
-                <div className="sim-grid-display">
-                  <HundredsChart 
-                    startCell={activeStationData.startCell} 
-                    highlighted={s3Path} 
-                    current={s3CurrentCell} 
-                  />
-                </div>
+              <div 
+                className="sim-workspace-grid flex flex-col items-center interactive-block-area"
+                onClick={() => {
+                  if (!stepsFinished) {
+                    if (s3TensAdded < s3TensTarget) handleS3JumpDown();
+                    else if (s3OnesAdded < s3OnesTarget) handleS3JumpRight();
+                  }
+                }}
+                style={{ 
+                  background: !stepsFinished ? 'rgba(124, 77, 255, 0.15)' : 'rgba(18, 10, 51, 0.4)',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '18px',
+                  border: !stepsFinished ? '2px dashed #7C4DFF' : '1px solid rgba(255, 255, 255, 0.1)',
+                  cursor: !stepsFinished ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'center'
+                }}
+              >
+                <HundredsChart 
+                  startCell={activeStationData.startCell} 
+                  highlighted={s3Path} 
+                  current={s3CurrentCell} 
+                  onCellClick={(val) => {
+                    if (!stepsFinished) {
+                      if (s3TensAdded < s3TensTarget && val === s3CurrentCell + 10) handleS3JumpDown();
+                      else if (s3TensAdded === s3TensTarget && s3OnesAdded < s3OnesTarget && val === s3CurrentCell + 1) handleS3JumpRight();
+                      else if (s3TensAdded < s3TensTarget) handleS3JumpDown();
+                      else if (s3OnesAdded < s3OnesTarget) handleS3JumpRight();
+                    }
+                  }}
+                />
 
-                {/* Right controls */}
-                <div className="sim-grid-controls">
-                  <div className="grid-jumps-feedback font-fredoka">
-                    <div className="feedback-line">Current: <span className="text-primary">{s3CurrentCell}</span></div>
-                    <div className="feedback-line">Row Jumps (+10): <span className="text-success">{s3TensAdded} / {s3TensTarget}</span></div>
-                    <div className="feedback-line">Col Jumps (+1): <span className="text-warning">{s3OnesAdded} / {s3OnesTarget}</span></div>
-                  </div>
+                {!stepsFinished && (
+                  <span className="tap-hint-label font-fredoka" style={{ display: 'block', marginTop: '0.45rem', color: '#FFC72C', fontSize: '1.05rem', fontWeight: 900 }}>
+                    👈 Tap grid or button below to jump on hundreds chart
+                  </span>
+                )}
+              </div>
 
-                  <div className="grid-action-buttons-strip">
-                    <button
-                      onClick={handleS3JumpDown}
-                      disabled={s3TensAdded >= s3TensTarget}
-                      className="sim-action-trigger-btn font-fredoka"
+              {!stepsFinished && (
+                <div className="sim-interactive-controls mt-3 font-fredoka flex justify-center">
+                  {s3TensAdded < s3TensTarget && (
+                    <button 
+                      onClick={handleS3JumpDown} 
+                      className="sim-action-trigger-btn font-fredoka animate-pulse"
+                      style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
                     >
-                      Jump Down (+10)
+                      ⬇️ Jump Down 1 Row (+10) [{s3TensAdded}/{s3TensTarget}]
                     </button>
-                    <button
-                      onClick={handleS3JumpRight}
-                      disabled={s3TensAdded < s3TensTarget || s3OnesAdded >= s3OnesTarget}
-                      className="sim-action-trigger-btn font-fredoka bg-warning"
+                  )}
+                  {s3TensAdded === s3TensTarget && s3OnesAdded < s3OnesTarget && (
+                    <button 
+                      onClick={handleS3JumpRight} 
+                      className="sim-action-trigger-btn font-fredoka animate-pulse"
+                      style={{ padding: '0.85rem 2.2rem', fontSize: '1.2rem', cursor: 'pointer', background: '#FFC72C', color: '#1A1A1A', border: 'none', borderRadius: '22px', fontWeight: 900, boxShadow: '0 6px 20px rgba(255, 199, 44, 0.4)' }}
                     >
-                      Jump Right (+1)
+                      ➡️ Jump Right 1 Cell (+1) [{s3OnesAdded}/{s3OnesTarget}]
                     </button>
-                  </div>
-
-                  {s3OnesAdded === s3OnesTarget && (
-                    <div className="sim-mastered-strip text-success font-fredoka animate-bounce-in">
-                      Grid Path Complete! Landed on {activeStationData.correct} ✓
-                    </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Station 4: Compensation */}
+          {/* Station 4: Compensation (Section D) */}
           {activeStation === 3 && (
             <div className="sim-station-box">
               <div className="sim-station-header">
-                <h3 className="sim-station-title font-fredoka">Sandbox 4: Round and Adjust</h3>
-                <button onClick={() => resetStation(3)} className="sim-reset-btn font-fredoka">Reset</button>
+                <button onClick={() => resetStation(3)} className="sim-reset-btn font-fredoka" style={{ padding: '0.3rem 0.85rem', fontSize: '0.88rem' }}>Reset</button>
               </div>
-              <p className="sim-instructions font-nunito">
-                Solve <strong>{activeStationData.problem}</strong> mentally. {activeStationData.addend2} is very close to {s4RoundedValue}!
-                Round {activeStationData.addend2} to {s4RoundedValue}, add it, then adjust for the extra.
-              </p>
 
-              {/* Interactive Vector Scale */}
-              <div className="sim-scale-arena">
+              <div 
+                className="sim-scale-arena interactive-block-area"
+                onClick={(e) => {
+                  if (!stepsFinished) {
+                    if (!s4Rounded) handleS4Round(e);
+                    else if (!s4Adjusted) handleS4Adjust(e);
+                  }
+                }}
+                style={{ 
+                  background: !stepsFinished ? 'rgba(124, 77, 255, 0.15)' : 'rgba(18, 10, 51, 0.4)',
+                  padding: '0.75rem 1rem',
+                  minHeight: '230px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '18px',
+                  border: !stepsFinished ? '2px dashed #7C4DFF' : '1px solid rgba(255, 255, 255, 0.15)',
+                  cursor: !stepsFinished ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  textAlign: 'center',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }}
+              >
                 <BalanceScale 
                   leftValue={activeStationData.correct} 
-                  rightValue={s4Adjusted ? activeStationData.correct : s4Rounded ? s4RoundedSum : activeStationData.addend1 + activeStationData.addend2} 
-                  leftLabel={`${activeStationData.addend1} + ${activeStationData.addend2} (Target)`} 
-                  rightLabel={s4Adjusted ? "Balanced ✓" : s4Rounded ? `${activeStationData.addend1} + ${s4RoundedValue} (Heavier!)` : "Tilted"}
+                  rightValue={s4Adjusted ? activeStationData.correct : s4Rounded ? s4RoundedSum : (activeStationData.addend1 + activeStationData.addend2)} 
+                  leftLabel={`Target Sum (${activeStationData.correct})`} 
+                  rightLabel={s4Adjusted ? "Balanced ✓" : s4Rounded ? `+${s4AdjustBy} Too Heavy! ⚠️` : `${activeStationData.addend1} + ${activeStationData.addend2}`}
                 />
-              </div>
-
-              {/* Interactive buttons */}
-              <div className="scale-control-panel font-fredoka">
-                {!s4Rounded ? (
-                  <button 
-                    onClick={handleS4Round} 
-                    className="sim-action-trigger-btn font-fredoka animate-pulse"
-                  >
-                    1. Round {activeStationData.addend2} up to {s4RoundedValue} (+{s4AdjustBy} extra)
-                  </button>
-                ) : !s4Adjusted ? (
-                  <div className="scale-adjust-block animate-bounce-in">
-                    <span className="scale-tilt-warning font-nunito text-danger">
-                      ⚠️ The scale tilted! You added {s4AdjustBy} too many.
-                    </span>
-                    <button 
-                      onClick={handleS4Adjust} 
-                      className="sim-action-trigger-btn font-fredoka bg-danger"
-                    >
-                      2. Subtract {s4AdjustBy} to adjust scale (-{s4AdjustBy})
-                    </button>
-                  </div>
-                ) : (
-                  <div className="sim-mastered-strip text-success font-fredoka animate-bounce-in">
-                    Scale balanced perfectly at {activeStationData.correct}! ({activeStationData.addend1} + {s4RoundedValue} - {s4AdjustBy} = {activeStationData.correct}) ✓
-                  </div>
+                {!stepsFinished && (
+                  <span className="tap-hint-label font-fredoka" style={{ display: 'block', marginTop: '0.45rem', color: '#FFC72C', fontSize: '1.1rem', fontWeight: 900 }}>
+                    👈 Tap scale box OR press big button below to balance!
+                  </span>
                 )}
               </div>
+
+              {!stepsFinished && (
+                <div className="scale-control-panel font-fredoka mt-3 flex justify-center" style={{ width: '100%' }}>
+                  {!s4Rounded ? (
+                    <button 
+                      onClick={(e) => handleS4Round(e)} 
+                      className="sim-action-trigger-btn font-fredoka animate-pulse"
+                      style={{ 
+                        padding: '0.9rem 2.2rem', 
+                        fontSize: '1.25rem', 
+                        cursor: 'pointer', 
+                        background: '#FFC72C', 
+                        color: '#1A1A1A', 
+                        border: '3px solid #FFA000', 
+                        borderRadius: '24px', 
+                        fontWeight: 900, 
+                        boxShadow: '0 8px 24px rgba(255, 199, 44, 0.55)',
+                        minWidth: '280px'
+                      }}
+                    >
+                      1. Round {activeStationData.addend2} up to {s4RoundedValue} (+{s4AdjustBy} extra) ⚖️
+                    </button>
+                  ) : (
+                    <div className="scale-adjust-block animate-bounce-in flex flex-col items-center" style={{ width: '100%' }}>
+                      <span className="scale-tilt-warning font-nunito text-danger block mb-2" style={{ color: '#FF5252', fontWeight: 900, fontSize: '1.15rem' }}>
+                        ⚠️ The scale tilted! You added {s4AdjustBy} too many (+{s4AdjustBy}).
+                      </span>
+                      <button 
+                        onClick={(e) => handleS4Adjust(e)} 
+                        className="sim-action-trigger-btn font-fredoka animate-pulse"
+                        style={{ 
+                          padding: '0.9rem 2.2rem', 
+                          fontSize: '1.25rem', 
+                          cursor: 'pointer', 
+                          background: '#FF5252', 
+                          color: '#FFFFFF', 
+                          border: '3px solid #D32F2F', 
+                          borderRadius: '24px', 
+                          fontWeight: 900, 
+                          boxShadow: '0 8px 24px rgba(255, 82, 82, 0.6)',
+                          minWidth: '280px'
+                        }}
+                      >
+                        2. Subtract {s4AdjustBy} to balance scale (-{s4AdjustBy}) ⚖️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          {/* CHECK FINAL ANSWER AREA - Unlocks after completing interactive steps */}
+          {/* Final Answer Checker */}
           {stepsFinished && (
-            <div className="sandbox-check-answer-box mt-6 p-5 rounded-2xl border-2 border-dashed border-cyan-400 bg-cyan-950/20 text-center animate-fade-in">
-              <h4 className="font-fredoka text-xl text-cyan-400 mb-2">Final Step: Solve the Sum!</h4>
+            <div className="sandbox-check-answer-box animate-fade-in font-fredoka">
+              <div className="sim-mastered-strip text-success font-fredoka">
+                {activeStation === 0 && `Decomposition Complete! ${activeStationData.addend1} + ${s1TensTarget * 10} + ${s1OnesTarget} = ${activeStationData.correct} ✓`}
+                {activeStation === 1 && `Bridging Complete! Landed on ${activeStationData.correct} ✓`}
+                {activeStation === 2 && `Grid Path Complete! Landed on ${activeStationData.correct} ✓`}
+                {activeStation === 3 && `Scale balanced perfectly at ${activeStationData.correct}! ✓`}
+              </div>
+
               {simStationsComplete[activeStation] ? (
-                <div className="sandbox-completed-badge font-fredoka text-success text-lg flex items-center justify-center gap-2">
-                  <CheckCircle size={22} /> Sandbox Completed! You've mastered this strategy!
+                <div className="sandbox-completed-badge font-fredoka text-success flex items-center justify-center gap-2 mt-2" style={{ fontSize: '1.25rem' }}>
+                  <CheckCircle size={26} /> Sandbox Completed! Strategy Mastered!
                 </div>
               ) : (
-                <div>
-                  <p className="font-nunito text-md mb-4 text-slate-300">
-                    What is the final answer to the addition challenge: <strong>{activeStationData.problem}</strong>?
-                  </p>
+                <div className="sim-final-input-row" style={{ marginTop: '0.4rem' }}>
+                  <span className="sim-final-label font-nunito" style={{ color: '#FFFFFF', fontSize: '1.15rem' }}>
+                    What is the final answer to <strong>{activeStationData.problem}</strong>?
+                  </span>
                   <div className="flex gap-3 justify-center items-center">
                     <input 
                       type="number" 
                       value={stationAnswers[activeStation]} 
                       onChange={(e) => setStationAnswers(prev => ({ ...prev, [activeStation]: e.target.value }))}
                       placeholder="?" 
-                      className="wonder-guess-input w-24 text-center text-xl font-bold"
+                      className="sim-final-input wonder-guess-input text-center font-bold"
+                      style={{ width: '85px', height: '46px', fontSize: '1.4rem' }}
                     />
                     <button 
                       onClick={handleCheckAnswer}
                       disabled={!stationAnswers[activeStation]}
-                      className="wonder-submit-btn font-fredoka px-6 py-2 rounded-xl text-md"
+                      className="sim-check-submit-btn wonder-submit-btn font-fredoka"
+                      style={{ padding: '0.65rem 1.6rem', fontSize: '1.15rem' }}
                     >
                       Check Answer
                     </button>
@@ -642,9 +722,12 @@ export default function SimulatePhase({
               )}
             </div>
           )}
-        </div>
-      </div>
 
+          {/* Bottom Card Status Line matching screenshot */}
+          <div className="ss-sim-card-footer font-fredoka">
+            Round {activeStation + 1} / {simStations.length}
+          </div>
+        </div>
       </div>
 
       {/* POPUP OVERLAY MODAL */}
